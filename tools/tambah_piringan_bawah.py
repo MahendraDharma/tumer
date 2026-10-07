@@ -7,11 +7,16 @@ Susunan baru (sumbu Y = atas, satuan mm):
   Base (tetap) -> Ring UHMW (tetap) -> Piringan bawah (BARU, Ø880x20, berputar)
   -> Ring UHMW atas (BARU, salinan) -> Piringan utama + kedua dudukan ragum (naik 22 mm)
 Pin center diperpanjang 22 mm agar menembus bushing kedua piringan.
+Kunci samping piringan bawah: Base diperlebar ke sisi -X, di atasnya Blok pin index bawah;
+Pin index bawah + knob (salinan Pin index) masuk horizontal ke salah satu dari 8 lubang
+radial di tepi piringan bawah (tiap 45 derajat).
 
 Jalankan: python3 tools/tambah_piringan_bawah.py   (butuh `pip install cadquery`)
 """
 import os
 import sys
+
+import math
 
 import cadquery as cq
 from OCP.BRepAdaptor import BRepAdaptor_Surface
@@ -28,6 +33,7 @@ from OCP.TDF import TDF_ChildIterator, TDF_Label, TDF_LabelSequence
 from OCP.TDocStd import TDocStd_Document
 from OCP.TopLoc import TopLoc_Location
 from OCP.XCAFDoc import XCAFDoc_ColorGen, XCAFDoc_ColorSurf, XCAFDoc_DocumentTool, XCAFDoc_Location
+from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCP.gp import gp_Trsf, gp_Vec
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -44,6 +50,13 @@ R_DISC = 440.0              # Ø880: menutup seluruh tapak dudukan ragum (sudut 
 POCKET_R, POCKET_D = 232.5, 10.0   # kantong Ring UHMW, sama dengan di Base
 Y_TOP = Y_RING_TOP + T_DISC
 DY = round(Y_TOP - Y_BASE_TOP, 4)  # = 22.0, kenaikan piringan utama + kedua ragum
+
+# Kunci samping piringan bawah (sisi -X, satu-satunya sisi yang masih muat di meja kerja)
+Y_LOCK = Y_RING_TOP + T_DISC / 2      # sumbu pin di tengah tebal piringan bawah
+IDX_R, IDX_DEPTH, PIN_ENGAGE = 5.25, 20.0, 15.0   # lubang radial sama dengan di piringan utama
+BASE_X_MIN = CX - 485.0               # tepi Base baru (dulu 130.2), masih di atas meja kerja (X 14)
+BLOCK_R0, BLOCK_R1, BLOCK_W, BLOCK_TOP = R_DISC + 6, R_DISC + 40, 60.0, Y_LOCK + 12
+BLOCK_BOLT_DT = 20.0
 
 UP = cq.Vector(0, 1, 0)
 # Tetap di tempat: Ring UHMW asli kini menopang piringan bawah, Pin center tetap dibaut ke Base
@@ -82,7 +95,43 @@ def build_lower_disc(base):
             continue
         y_face = Y_TOP - dtop
         d = d.cut(cyl(r, y_face - depth, y_face + 1, x, z))
+    # 8x lubang radial di tepi untuk kunci samping (tiap 45°)
+    for k in range(8):
+        a = math.radians(45 * k)
+        u = cq.Vector(math.cos(a), 0, math.sin(a))
+        start = cq.Vector(CX, Y_LOCK, CZ) + u * (R_DISC - IDX_DEPTH)
+        d = d.cut(cq.Solid.makeCylinder(IDX_R, IDX_DEPTH + 2, start, u))
     return d.clean()
+
+
+def build_base(base):
+    """Perlebar Base ke sisi -X dengan sudut R100 yang sama, lalu tambah 2x tap M8 untuk blok."""
+    x_old, zf, zb, rc = 130.2205, 293.073, -516.927, 100.0
+    y0, y1 = Y_BASE_TOP - 20.0, Y_BASE_TOP
+    def box(x0, x1, z0, z1):
+        return cq.Solid.makeBox(x1 - x0, y1 - y0, z1 - z0, cq.Vector(x0, y0, z0))
+    ext = box(BASE_X_MIN + rc, x_old + rc + 1, zb, zf).fuse(box(BASE_X_MIN, x_old + rc + 1, zb + rc, zf - rc))
+    for z in (zf - rc, zb + rc):
+        ext = ext.fuse(cq.Solid.makeCylinder(rc, y1 - y0, cq.Vector(BASE_X_MIN + rc, y0, z), UP))
+    b = cq.Shape.cast(base).fuse(ext)
+    for z in (163.073, -386.927):                       # lubang Ø40 ke meja kerja tetap
+        b = b.cut(cyl(20.0, y0 - 1, y1 + 1, 230.2205, z))
+    xm = CX - (BLOCK_R0 + BLOCK_R1) / 2
+    for dz in (-BLOCK_BOLT_DT, BLOCK_BOLT_DT):
+        b = b.cut(cyl(3.4, y1 - 15, y1 + 1, xm, CZ + dz))
+    return b.clean()
+
+
+def build_lock_block():
+    x0, x1 = CX - BLOCK_R1, CX - BLOCK_R0
+    blk = cq.Solid.makeBox(x1 - x0, BLOCK_TOP - Y_BASE_TOP, BLOCK_W,
+                           cq.Vector(x0, Y_BASE_TOP, CZ - BLOCK_W / 2))
+    blk = blk.cut(cq.Solid.makeCylinder(IDX_R, x1 - x0 + 2, cq.Vector(x0 - 1, Y_LOCK, CZ), cq.Vector(1, 0, 0)))
+    xm = (x0 + x1) / 2
+    for dz in (-BLOCK_BOLT_DT, BLOCK_BOLT_DT):          # 2x baut M8 ke Base
+        blk = blk.cut(cyl(4.5, Y_BASE_TOP - 1, BLOCK_TOP + 1, xm, CZ + dz))
+        blk = blk.cut(cyl(7.5, BLOCK_TOP - 5, BLOCK_TOP + 1, xm, CZ + dz))
+    return blk.clean()
 
 
 def build_bushing():
@@ -169,6 +218,26 @@ def main():
 
     add_part("Piringan bawah", build_lower_disc(world["Base (rev)"]).wrapped, color_of("Piringan (baru)"))
     add_part("Bushing perunggu bawah", build_bushing().wrapped, color_of("Bushing perunggu"))
+    # Base diperlebar (label & warna tetap), lalu kunci samping piringan bawah di sisi -X
+    new_base, base_col = build_base(world["Base (rev)"]), color_of("Base (rev)")
+    base_c, base_ref = by_name["Base (rev)"]
+    st.RemoveComponent(base_c)
+    st.RemoveShape(base_ref, True)
+    del world["Base (rev)"]
+    add_part("Base (rev)", new_base.wrapped, base_col)
+    add_part("Blok pin index bawah", build_lock_block().wrapped, base_col)
+    # Pin & knob = salinan Pin index asli: diputar 180° ke sisi -X, ujung pin masuk PIN_ENGAGE ke tepi piringan bawah
+    def baked(src):  # salinan geometri di koordinat dunia (posisi Ver3, sebelum dinaikkan)
+        c, r = by_name[src]
+        w = st.GetShape_s(r).Moved(TopLoc_Location(shift).Inverted().Multiplied(st.GetLocation_s(c)))
+        return cq.Shape.cast(BRepBuilderAPI_Transform(w, gp_Trsf(), True).Shape())
+    pin0, knob0 = baked("Pin index"), baked("Knob pin index")
+    bb = pin0.BoundingBox()
+    tip_r, y_axis = bb.xmin - CX, (bb.ymin + bb.ymax) / 2
+    for shp, nm, src in ((pin0, "Pin index bawah", "Pin index"), (knob0, "Knob pin index bawah", "Knob pin index")):
+        shp = shp.rotate(cq.Vector(CX, 0, CZ), cq.Vector(CX, 1, CZ), 180)
+        shp = shp.translate(cq.Vector(-(R_DISC - PIN_ENGAGE - tip_r), Y_LOCK - y_axis, 0))
+        add_part(nm, BRepBuilderAPI_Transform(shp.wrapped, gp_Trsf(), True).Shape(), color_of(src))
     st.UpdateAssemblies()
 
     # Cek tabrakan antar part baru/berpindah
