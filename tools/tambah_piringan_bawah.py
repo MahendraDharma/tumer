@@ -116,7 +116,7 @@ def main():
     comps = TDF_LabelSequence()
     st.GetComponents_s(root, comps)
 
-    TDataStd_Name.Set_s(root, TCollection_ExtendedString("Ver4 Jig Assembly ragum putar"))
+    TDataStd_Name.Set_s(root, TCollection_ExtendedString("JigTBU_rev2"))  # nama asli di Ver3
     shift = gp_Trsf()
     shift.SetTranslation(gp_Vec(0, DY, 0))
     by_name, world = {}, {}
