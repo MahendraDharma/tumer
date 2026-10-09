@@ -3,12 +3,12 @@
 Input : Ver3 Jig Assembly ragum tetap.step
 Output: Ver4 Jig Assembly ragum putar.step
 
-Susunan baru (sumbu Y = atas, satuan mm), dirampingkan ke faktor keamanan ±2,5:
+Susunan baru (sumbu Y = atas, satuan mm), dirampingkan ke faktor keamanan >= 2:
   Meja kerja -> Base (plat bulat Ø900x5, 8 baut benam M8) -> Ring UHMW 5 mm + 8 bantalan UHMW 5 mm
-  di bawah ujung piringan (ragum tidak mengambang) -> Piringan bawah (BARU, plat 20 mm,
+  di bawah ujung piringan (ragum tidak mengambang) -> Piringan bawah (BARU, plat 19 mm,
   lingkaran Ø880 dipangkas jadi lajur 600 mm, ujung di bawah dudukan 360 mm) -> Ring UHMW atas 3 mm (di
-  cekungan 1 mm) -> Piringan utama + kedua dudukan ragum (naik DY = 10 mm terhadap Ver3).
-  Alas TBU (muka atas piringan utama) = 50 mm di atas meja kerja (REQ-02).
+  cekungan 1 mm) -> Piringan utama + kedua dudukan ragum (naik DY = 9 mm terhadap Ver3).
+  Alas TBU (muka atas piringan utama) = 49 mm di atas meja kerja (REQ-02: <= 50 mm).
 
 Kunci kedua piringan dari samping: pin masuk dari tepi piringan, lurus ke tengah, dan ujungnya
 masuk ke lubang silang di Pin center (diam). Tarik pin agar piringan bisa diputar.
@@ -58,14 +58,14 @@ R_DISC1 = 230.0
 Y_TABLE = V3_BASE_TOP - 20.0                 # muka atas meja kerja = dasar Base
 T_BASE = 5.0                                 # Base ditopang penuh oleh meja kerja
 T_RING, T_RING2, RECESS = 5.0, 3.0, 1.0      # ring UHMW bawah, ring UHMW atas, cekungan ring atas
-T_DISC = 20.0                                # piringan bawah (SF ±2,5 terhadap momen jepit ragum)
+T_DISC = 19.0                                # piringan bawah (SF >= 2 terhadap momen jepit ragum; 18 mm hanya 1,87)
 R_DISC, HALF_W = 440.0, 300.0                # lingkaran Ø880 dipangkas jadi lajur 600 mm (|x| <= 300)
 END_Z, END_HALF = 270.0, 180.0               # di bawah dudukan (|z| > 270, lewat baris baut dalam): lebar 360 mm
 RING_RI, RING_RO = 150.0, 232.0
 Y_BASE_TOP = Y_TABLE + T_BASE
 Y_RING_TOP = Y_BASE_TOP + T_RING             # dasar piringan bawah
 Y_TOP = Y_RING_TOP + T_DISC                  # muka atas piringan bawah = tempat dudukan ragum
-DY = round(Y_TOP - V3_BASE_TOP, 4)           # = 10: kenaikan piringan utama + kedua ragum terhadap Ver3
+DY = round(Y_TOP - V3_BASE_TOP, 4)           # = 9: kenaikan piringan utama + kedua ragum terhadap Ver3
 FLANGE_CB = 2.0                              # cekungan bawah piringan bawah di atas flens Pin center
 
 # Kunci samping: lubang radial Ø10,5 (sama dengan piringan utama), ujung pin masuk ke Pin center
