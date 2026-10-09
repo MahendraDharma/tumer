@@ -4,7 +4,8 @@ Input : Ver3 Jig Assembly ragum tetap.step
 Output: Ver4 Jig Assembly ragum putar.step
 
 Susunan baru (sumbu Y = atas, satuan mm), dirampingkan ke faktor keamanan ±2,5:
-  Meja kerja -> Base (plat 660x660x5) -> Ring UHMW 5 mm -> Piringan bawah (BARU, plat 20 mm,
+  Meja kerja -> Base (plat bulat Ø900x5, 8 baut benam M8) -> Ring UHMW 5 mm + 8 bantalan UHMW 5 mm
+  di bawah ujung piringan (ragum tidak mengambang) -> Piringan bawah (BARU, plat 20 mm,
   lingkaran Ø880 dipangkas jadi lajur 600 mm, ujung di bawah dudukan 360 mm) -> Ring UHMW atas 3 mm (di
   cekungan 1 mm) -> Piringan utama + kedua dudukan ragum (naik DY = 10 mm terhadap Ver3).
   Alas TBU (muka atas piringan utama) = 50 mm di atas meja kerja (REQ-02).
@@ -72,9 +73,12 @@ IDX_R, PIN_R, PIN_TIP = 5.25, 5.0, 8.0       # ujung pin di r = 8 mm (12 mm di d
 Y_LOCK = Y_RING_TOP + T_DISC / 2             # sumbu pin bawah: tengah tebal piringan bawah
 Y_LOCK1 = V3_PIN1 + DY                       # sumbu pin piringan utama setelah dinaikkan
 
-# Base: persegi 660x660 R60, cukup untuk 4 lubang Ø40 ke meja dan Ring UHMW (piringan bawah hanya bertumpu di ring)
-BASE_HALF, BASE_RC = 330.0, 60.0
-MOUNT_HOLES = [(230.2205, 163.073), (780.2205, 163.073), (230.2205, -386.927), (780.2205, -386.927)]  # Ø40 ke meja
+# Base: plat bulat Ø900 menutup seluruh area putar; diikat ke meja dengan 8 baut benam M8 (rata permukaan,
+# tidak tertabrak piringan bawah yang lewat 5 mm di atasnya)
+R_BASE = 450.0
+MOUNT_R, MOUNT_ANG = 420.0, [22.5 + 45 * k for k in range(8)]
+# 8 bantalan UHMW di bawah ujung piringan bawah (tempat ragum), tebal sama dengan ring dalam
+PAD_R0, PAD_R1, PAD_W, PAD_ANG = 295.0, 365.0, 60.0, [45 * k for k in range(8)]
 
 UP = cq.Vector(0, 1, 0)
 # Tidak ikut dinaikkan DY (Base, ring bawah, dan Pin center dibuat ulang di posisi barunya)
@@ -94,16 +98,6 @@ def radial_holes(shape, y, r0, r1, n=8):
     return shape
 
 
-def rounded_slab(x0, x1, z0, z1, rc, y0, y1):
-    h = y1 - y0
-    s = cq.Solid.makeBox(x1 - x0 - 2 * rc, h, z1 - z0, cq.Vector(x0 + rc, y0, z0))
-    s = s.fuse(cq.Solid.makeBox(x1 - x0, h, z1 - z0 - 2 * rc, cq.Vector(x0, y0, z0 + rc)))
-    for x in (x0 + rc, x1 - rc):
-        for z in (z0 + rc, z1 - rc):
-            s = s.fuse(cq.Solid.makeCylinder(rc, h, cq.Vector(x, y0, z), UP))
-    return s
-
-
 def base_holes(base):
     """Lubang tap vertikal Base Ver3: (x, z, r, jarak muka dari atas Base, kedalaman)."""
     holes = set()
@@ -120,13 +114,26 @@ def base_holes(base):
     return sorted(holes)
 
 
+def polar(r, deg):
+    a = math.radians(deg)
+    return CX + r * math.cos(a), CZ + r * math.sin(a)
+
+
+def csk(shape, x, z, y_top, r_hole, r_head):
+    """Lubang tembus + benaman 90° dari muka atas (untuk baut kepala benam)."""
+    shape = shape.cut(cyl(r_hole, y_top - 30, y_top + 1, x, z))
+    return shape.cut(cq.Solid.makeCone(r_head, r_hole, r_head - r_hole, cq.Vector(x, y_top, z), cq.Vector(0, -1, 0)))
+
+
 def build_base(base):
-    """Base plat 920x920xT_BASE R100 tanpa kantong: 4 lubang Ø40 ke meja kerja, 4 tap M6 ring UHMW,
-    4 tap M6 flens Pin center (posisi sama dengan Base Ver3). Lubang lain Ver3 tidak dipakai lagi."""
+    """Base plat bulat Ø900xT_BASE: 8 lubang benam M8 ke meja kerja, 4 tap M6 Ring UHMW dan 4 tap M6 flens
+    Pin center (posisi sama dengan Base Ver3), 8 tap M6 bantalan UHMW."""
     y0, y1 = Y_TABLE, Y_TABLE + T_BASE
-    b = rounded_slab(CX - BASE_HALF, CX + BASE_HALF, CZ - BASE_HALF, CZ + BASE_HALF, BASE_RC, y0, y1)
-    for x, z in MOUNT_HOLES:
-        b = b.cut(cyl(20.0, y0 - 1, y1 + 1, x, z))
+    b = cyl(R_BASE, y0, y1)
+    for a in MOUNT_ANG:
+        b = csk(b, *polar(MOUNT_R, a), y1, 4.5, 8.25)
+    for a in PAD_ANG:
+        b = b.cut(cyl(2.5, y0 - 1, y1 + 1, *polar((PAD_R0 + PAD_R1) / 2, a)))
     for x, z, r, dtop, depth in base_holes(base):
         if r < 3:                                              # tap M6 (bor Ø5): ring UHMW & flens Pin center
             b = b.cut(cyl(r, y0 - 1, y1 + 1, x, z))
@@ -138,6 +145,13 @@ def ring(y0, t, screws=()):
     for x, z in screws:                                        # baut L M6, kepala tenggelam
         r = r.cut(cyl(3.3, y0 - 1, y0 + t + 1, x, z)).cut(cyl(5.5, y0 + t - 3.5, y0 + t + 1, x, z))
     return r.clean()
+
+
+def build_pad(deg):
+    rm = (PAD_R0 + PAD_R1) / 2
+    p = cq.Solid.makeBox(PAD_R1 - PAD_R0, T_RING, PAD_W, cq.Vector(CX + PAD_R0, Y_BASE_TOP, CZ - PAD_W / 2))
+    p = csk(p, CX + rm, CZ, Y_BASE_TOP + T_RING, 3.3, 6.2)
+    return p.rotate(cq.Vector(CX, 0, CZ), cq.Vector(CX, 1, CZ), -deg).clean()
 
 
 def build_lower_disc(base):
@@ -283,8 +297,10 @@ def main():
     knob = knob.translate(cq.Vector(-(HALF_W - R_DISC1), Y_LOCK - Y_LOCK1, 0))
     add_part("Knob pin index bawah", bake(knob), color_of("Knob pin index"))
 
-    # Base 660x660x5 di bawah Ring UHMW dan Pin center
+    # Base Ø900x5 di bawah seluruh area putar + 8 bantalan UHMW di bawah ujung piringan
     replace_part("Base (rev)", "Base (rev)", bake(build_base(world["Base (rev)"])))
+    for k, a in enumerate(PAD_ANG, 1):
+        add_part(f"Bantalan UHMW {k}", bake(build_pad(a)), color_of("Ring UHMW"))
     st.UpdateAssemblies()
 
     # Cek tabrakan antar part
