@@ -3,10 +3,9 @@
 Input : Ver4 Jig Assembly ragum putar.step
 Output: Ver4 Jig + TBU terjepit.step   (kondisi terjepit, sudut 0°)
 
-Model TBU disederhanakan dari gambar Nabtesco Tread Brake Unit 152-3.5 (tanpa parking brake):
-panjang 300 mm (arah jepit ragum), lebar 206 mm, muka mounting (4 x M20, pola 114 x 250) menghadap
-ke bawah di atas piringan utama. Bentuk hanya envelope (housing, silinder rem, lever, shoe head,
-brake shoe), bukan geometri asli.
+Model TBU disederhanakan (envelope, bukan geometri asli): panjang ±500 mm, lebar ±206 mm
+(Nabtesco 152-3.5, lebar dari gambar Section A-A). Ragum menjepit sisi LEBAR TBU; panjangnya
+melintang di atas piringan utama. Muka mounting (4 x M20, pola 114 x 250) menghadap ke bawah.
 
 Fungsi state(...) dipakai juga oleh script render untuk gambar langkah penggunaan.
 Jalankan: python3 tools/visualisasi_tbu.py   (butuh `pip install cadquery`)
@@ -30,10 +29,12 @@ DST = os.path.join(HERE, '..', 'Ver4 Jig + TBU terjepit.step')
 
 CX, CZ = 505.21, -111.927
 Y_DISC1_TOP = 317.3205            # muka atas piringan utama = alas TBU
-TBU_L, TBU_W = 300.0, 206.0       # Nabtesco 152-3.5: panjang (arah jepit) x lebar
+TBU_L, TBU_W = 500.0, 206.0       # panjang (melintang) x lebar (arah jepit ragum)
 VISE_TILT = math.degrees(math.atan2(0.0143, 0.9999))  # sumbu kedua ragum di Ver3 miring ±0,82° terhadap Z
 AX = cq.Vector(math.sin(math.radians(VISE_TILT)), 0, math.cos(math.radians(VISE_TILT)))
-CLAMP_TRAVEL = 81.8               # langkah tiap rahang sampai menyentuh TBU (dicek: celah ±0,2 mm)
+JAW_FACE = 232.0                  # jarak muka rahang (terbuka) ke sumbu jig, sepanjang sumbu ragum
+CLAMP_TRAVEL = JAW_FACE - TBU_W / 2 - 0.2  # langkah tiap rahang sampai menyentuh TBU (±129 mm)
+HANDLE_ROT = 90.0                 # T-handle diputar mendatar; menghadap bawah ia menabrak dudukan ragum
 PIN_PULL = 20.0                   # tarik pin index agar piringan bebas
 
 # Part yang ikut bergerak saat handle ragum diputar (rahang + batang ulir + handle)
@@ -74,23 +75,21 @@ def vcyl(r, y0, y1, x=0.0, z=0.0):
 
 
 def build_tbu():
-    """TBU sederhana di koordinat lokal (x = lebar, y = atas dari alas, z = panjang/arah jepit)."""
-    hw, hl = TBU_W / 2, TBU_L / 2
-    flange = box(-hw, hw, 0, 20, -hl, hl)
-    for sx in (-57, 57):
-        for sz in (-125, 125):
-            flange = flange.cut(vcyl(11, -1, 21, sx, sz))           # 4 lubang mounting M20
-    housing = box(-75, 75, 20, 180, -hl, hl)
-    housing = housing.fillet(8, [e for e in housing.Edges() if abs(e.Center().y - 100) < 1])
-    cyl = vcyl(95, 20, 215, 0, 55).fuse(vcyl(75, 215, 230, 0, 55))  # silinder rem Ø152 + cover
-    cyl = cyl.cut(housing)
-    lever = box(-55, 55, 180, 250, -hl, -10).cut(cyl)
-    rod = vcyl(18, 250, 262, 0, -40)
-    head = box(-65, 65, 262, 300, -110, 110)
-    shoe = box(-60, 60, 300, 372, -145, 145).cut(
-        cq.Solid.makeCylinder(430, 200, cq.Vector(-100, 775, 0), cq.Vector(1, 0, 0)))
-    return {'TBU - flens mounting': flange, 'TBU - housing': housing,
-            'TBU - silinder rem': cyl, 'TBU - housing lever': lever.fuse(rod),
+    """TBU sederhana di koordinat lokal (x = panjang, y = atas dari alas, z = lebar/arah jepit)."""
+    hl, hw = TBU_L / 2, TBU_W / 2
+    body = box(-150, 150, 0, 180, -hw, hw)                     # flens mounting + housing utama
+    for sx in (-125, 125):
+        for sz in (-57, 57):
+            body = body.cut(vcyl(11, -1, 25, sx, sz))           # 4 lubang mounting M20 (114 x 250)
+    cyl = cq.Solid.makeCylinder(95, hl - 150, cq.Vector(-150, 100, 0), cq.Vector(-1, 0, 0))  # silinder rem
+    cover = cq.Solid.makeCylinder(70, 12, cq.Vector(-hl + 12, 100, 0), cq.Vector(-1, 0, 0))
+    lever = box(150, hl, 20, 200, -60, 60)
+    rod = vcyl(18, 180, 262, 40, 0)
+    head = box(-110, 110, 262, 300, -65, 65)
+    shoe = box(-145, 145, 300, 372, -60, 60).cut(
+        cq.Solid.makeCylinder(430, 200, cq.Vector(0, 775, -100), cq.Vector(0, 0, 1)))
+    return {'TBU - housing': body, 'TBU - silinder rem': cyl.fuse(cover).cut(body),
+            'TBU - housing lever': lever.fuse(rod).cut(body),
             'TBU - shoe head': head, 'TBU - brake shoe': shoe}
 
 
@@ -101,15 +100,21 @@ def _rot(s, deg):
 def state(parts, clamp=1.0, lift=0.0, angle=0.0, pins_out=False, with_tbu=True):
     """Kembalikan {nama: shape} untuk satu kondisi.
     clamp: 0 = rahang terbuka, 1 = rahang menjepit TBU; lift: TBU diangkat (mm);
-    angle: sudut putar kedua piringan (derajat); pins_out: pin index ditarik."""
+    angle: sudut putar kedua piringan (derajat, kelipatan 45° bila pin terkunci); pins_out: pin index ditarik."""
     d = CLAMP_TRAVEL * clamp
     out = {}
     for n, s in parts.items():
+        if n.startswith(('Handle', 'Vise Rod')) and HANDLE_ROT:   # batang ulir + T-handle berputar bersama
+            sg = 1 if 'atas' in n else -1
+            hub = cq.Vector(CX + sg * 7.66, 437.32, CZ + sg * 533.95)   # sumbu kepala batang ulir
+            s = s.rotate(hub, hub + AX, HANDLE_ROT)
         if n.startswith(MOVING):
             s = s.translate(AX * (-d if 'atas' in n else d))
         if pins_out and n.startswith(('Pin index', 'Knob pin index')):
             s = s.translate(cq.Vector(-PIN_PULL if 'bawah' in n else PIN_PULL, 0, 0))
-        if angle and not n.startswith(FIXED):
+        # pin terkunci selalu di lubang silang Pin center (sumbu X); pin hanya ikut berputar saat ditarik
+        pin = n.startswith(('Pin index', 'Knob pin index'))
+        if angle and not n.startswith(FIXED) and (pins_out or not pin):
             s = _rot(s, angle)
         out[n] = s
     if with_tbu:
