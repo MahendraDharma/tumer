@@ -4,6 +4,7 @@
 |---|---|
 | `Ver3 Jig Assembly ragum tetap.step` | Versi asli: hanya piringan hitam yang berputar, ragum dibaut ke Base |
 | `Ver4 Jig Assembly ragum putar.step` | Versi baru: ditambah **Piringan bawah** sehingga kedua ragum ikut berputar |
+| `Ver4 Jig + TBU terjepit.step` | Ver4 dengan TBU (model sederhana) dalam kondisi terjepit kedua ragum |
 | `tools/tambah_piringan_bawah.py` | Script yang membuat Ver4 dari Ver3 (`pip install cadquery`, lalu `python3 tools/tambah_piringan_bawah.py`) |
 
 ## Perubahan Ver3 → Ver4
@@ -52,3 +53,16 @@ Hasil pengecekan CAD: celah pin–lubang 0,25 mm, pin center–bushing 0,05 mm, 
 - Base Ø900 menjorok ±41 mm keluar dari tepi meja kerja di sisi +Z.
 - Baut Base ke meja diubah dari 4 × M20 (REQ-05) menjadi 8 × M8 kepala benam, karena kepala M20 akan tertabrak piringan bawah.
 - Piringan utama (18 mm), dudukan ragum, vise holder, dan clamp adalah part Ver3 dan tidak diubah.
+
+## Cara penggunaan (visualisasi dengan TBU)
+
+![Jig dengan TBU terjepit](docs/tbu_terjepit_keterangan.png)
+
+![Langkah penggunaan](docs/langkah_penggunaan.png)
+
+1. Buka kedua rahang. Letakkan TBU dengan muka mounting (4 × M20) di bawah, di tengah piringan utama.
+2. Putar handle kedua ragum sampai rahang menekan kedua ujung TBU. Untuk TBU 152-3.5 (panjang 300 mm), setiap rahang maju ±82 mm.
+3. Tarik kedua pin index ±20 mm, lalu putar piringan. TBU, kedua ragum, dan kedua piringan berputar bersama.
+4. Masukkan kembali kedua pin di kelipatan 45°. TBU terkunci dan sisi lain bisa dikerjakan.
+
+Model TBU disederhanakan dari gambar Nabtesco Tread Brake Unit 152-3.5 (panjang 300 mm, lebar 206 mm, pola mounting 114 × 250). Bentuknya hanya envelope, bukan geometri asli. Kedua ragum di Ver3 terpasang miring ±0,82° terhadap sumbu jig, jadi TBU di model diputar dengan sudut yang sama. Dibuat dengan `tools/visualisasi_tbu.py` (STEP) dan `tools/render_visualisasi_tbu.py` (gambar).
