@@ -4,8 +4,10 @@ Input : Ver3 Jig Assembly ragum tetap.step
 Output: Ver4 Jig Assembly ragum putar.step
 
 Susunan baru (sumbu Y = atas, satuan mm):
-  Base (diperlebar 920x920) -> Ring UHMW (tetap) -> Piringan bawah (BARU, Ø880x30, berputar)
-  -> Ring UHMW atas (salinan) -> Piringan utama + kedua dudukan ragum (naik DY = 32 mm)
+  Base (plat 920x920x5, dijepit ke meja kerja) -> Ring UHMW (di atas Base) -> Piringan bawah (BARU,
+  Ø880x30, berputar) -> Ring UHMW atas (salinan) -> Piringan utama + kedua dudukan ragum.
+  Relatif terhadap Ver3: piringan utama & ragum naik DY = 32 mm, lalu semua part di atas Base turun
+  BASE_DROP = 5 mm karena Base 20 -> 5 mm dan ring UHMW tidak lagi masuk kantong (10 mm).
 
 Kunci kedua piringan dari samping: pin masuk dari tepi piringan, lurus ke tengah, dan ujungnya
 masuk ke lubang silang di Pin center (diam). Tarik pin agar piringan bisa diputar.
@@ -63,6 +65,10 @@ Y_LOCK1 = Y_PIN1 + DY                            # sumbu pin piringan utama sete
 # Base baru: persegi R100 yang menutup penuh piringan bawah + 20 mm
 BASE_HALF, BASE_RC = R_DISC + 20.0, 100.0
 BASE_OLD = (130.2205, 880.2205, -516.927, 293.073)  # X0, X1, Z0, Z1 Base Ver3 (sudut R100)
+T_BASE = 5.0                                  # tebal Base baru (plat ditopang penuh oleh meja kerja)
+Y_TABLE = Y_BASE_TOP - 20.0                   # muka atas meja kerja = dasar Base
+BASE_DROP = 20.0 - T_BASE - POCKET_D          # = 5: Base 15 mm lebih tipis, ring naik 10 mm keluar kantong
+MOUNT_HOLES = [(230.2205, 163.073), (780.2205, 163.073), (230.2205, -386.927), (780.2205, -386.927)]  # Ø40 ke meja
 
 UP = cq.Vector(0, 1, 0)
 # Tetap di tempat: Ring UHMW asli kini menopang piringan bawah, Pin center tetap dibaut ke Base
@@ -109,12 +115,16 @@ def base_holes(base):
 
 
 def build_base(base):
-    """Base persegi 920x920 R100; semua lubang & kantong Base Ver3 dipertahankan."""
-    y0 = Y_BASE_TOP - 20.0
-    old = rounded_slab(*BASE_OLD, BASE_RC, y0, Y_BASE_TOP)
-    cavities = old.cut(cq.Shape.cast(base))
-    new = rounded_slab(CX - BASE_HALF, CX + BASE_HALF, CZ - BASE_HALF, CZ + BASE_HALF, BASE_RC, y0, Y_BASE_TOP)
-    return new.cut(cavities).clean()
+    """Base plat 920x920xT_BASE R100 tanpa kantong: 4 lubang Ø40 ke meja kerja, 4 tap M6 ring UHMW,
+    4 tap M6 flens Pin center (posisi sama dengan Base Ver3). Lubang lain Ver3 tidak dipakai lagi."""
+    y0, y1 = Y_TABLE, Y_TABLE + T_BASE
+    b = rounded_slab(CX - BASE_HALF, CX + BASE_HALF, CZ - BASE_HALF, CZ + BASE_HALF, BASE_RC, y0, y1)
+    for x, z in MOUNT_HOLES:
+        b = b.cut(cyl(20.0, y0 - 1, y1 + 1, x, z))
+    for x, z, r, dtop, depth in base_holes(base):
+        if r < 3:                                              # tap M6 (bor Ø5): ring UHMW & flens Pin center
+            b = b.cut(cyl(r, y0 - 1, y1 + 1, x, z))
+    return b.clean()
 
 
 def build_lower_disc(base):
@@ -209,11 +219,14 @@ def main():
         del world[old]
         add_part(new_name, shape, col)
 
+    def baked(shape):  # geometri baru tanpa TopLoc_Location, agar tiap part jadi satu produk bernama di STEP
+        return BRepBuilderAPI_Transform(shape.Located(TopLoc_Location()), shape.Location().Transformation(), True).Shape()
+
     def solid(nm):
-        return cq.Shape.cast(BRepBuilderAPI_Transform(world[nm], gp_Trsf(), True).Shape())
+        return cq.Shape.cast(baked(world[nm]))
 
     def bake(s):
-        return BRepBuilderAPI_Transform(s.wrapped, gp_Trsf(), True).Shape()
+        return baked(s.wrapped)
 
     lower_disc = build_lower_disc(world["Base (rev)"])
 
@@ -247,8 +260,23 @@ def main():
     knob = knob.translate(cq.Vector(-(R_DISC - R_DISC1), Y_LOCK - Y_LOCK1, 0))
     add_part("Knob pin index bawah", bake(knob), color_of("Knob pin index"))
 
-    # Base diperlebar menutup penuh piringan bawah
+    # Base 920x920x5 menutup penuh piringan bawah; semua part di atasnya turun BASE_DROP
     replace_part("Base (rev)", "Base (rev)", bake(build_base(world["Base (rev)"])))
+    down = gp_Trsf()
+    down.SetTranslation(gp_Vec(0, -BASE_DROP, 0))
+    comps = TDF_LabelSequence()
+    st.GetComponents_s(root, comps)
+    for i in range(1, comps.Length() + 1):
+        c = comps.Value(i)
+        ref = TDF_Label()
+        st.GetReferredShape_s(c, ref)
+        nm = name_of(ref)
+        if nm in ("Base (rev)", "Replika workbench"):
+            continue
+        XCAFDoc_Location.Set_s(c, TopLoc_Location(down).Multiplied(st.GetLocation_s(c)))
+    for nm in list(world):
+        if nm not in ("Base (rev)", "Replika workbench"):
+            world[nm] = world[nm].Moved(TopLoc_Location(down))
     st.UpdateAssemblies()
 
     # Cek tabrakan antar part
