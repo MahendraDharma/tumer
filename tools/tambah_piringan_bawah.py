@@ -3,11 +3,11 @@
 Input : Ver3 Jig Assembly ragum tetap.step
 Output: Ver4 Jig Assembly ragum putar.step
 
-Susunan baru (sumbu Y = atas, satuan mm):
-  Base (plat 920x920x5, dijepit ke meja kerja) -> Ring UHMW (di atas Base) -> Piringan bawah (BARU,
-  Ø880x30, berputar) -> Ring UHMW atas (salinan) -> Piringan utama + kedua dudukan ragum.
-  Relatif terhadap Ver3: piringan utama & ragum naik DY = 32 mm, lalu semua part di atas Base turun
-  BASE_DROP = 5 mm karena Base 20 -> 5 mm dan ring UHMW tidak lagi masuk kantong (10 mm).
+Susunan baru (sumbu Y = atas, satuan mm), dirampingkan ke faktor keamanan ±3:
+  Meja kerja -> Base (plat 920x920x5) -> Ring UHMW 5 mm -> Piringan bawah (BARU, plat 20 mm,
+  lingkaran Ø880 dipangkas jadi lajur 700 mm sepanjang sumbu ragum) -> Ring UHMW atas 3 mm (di
+  cekungan 1 mm) -> Piringan utama + kedua dudukan ragum (naik DY = 10 mm terhadap Ver3).
+  Alas TBU (muka atas piringan utama) = 50 mm di atas meja kerja (REQ-02).
 
 Kunci kedua piringan dari samping: pin masuk dari tepi piringan, lurus ke tengah, dan ujungnya
 masuk ke lubang silang di Pin center (diam). Tarik pin agar piringan bisa diputar.
@@ -43,35 +43,40 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "Ver3 Jig Assembly ragum tetap.step")
 DST = os.path.join(ROOT, "Ver4 Jig Assembly ragum putar.step")
 
-# Sumbu putar & level, diambil eksak dari geometri Ver3
+# Sumbu putar & level Ver3 (eksak dari geometri)
 CX, CZ = 505.21, -111.927
-Y_BASE_TOP = 288.3205       # muka atas Base (dulu dudukan ragum duduk di sini)
-Y_RING_TOP = 290.3205       # muka atas Ring UHMW di Base (dulu dasar piringan utama)
-Y_PIN_TOP = 305.3           # ujung atas poros Pin center di Ver3
-Y_DISC1_TOP = 308.3205      # muka atas piringan utama di Ver3
-Y_PIN1 = 299.3205           # sumbu Pin index piringan utama di Ver3
+V3_BASE_TOP = 288.3205      # muka atas Base Ver3 (dudukan ragum duduk di sini)
+V3_DISC1_BOT = 290.3205     # dasar piringan utama Ver3 (= muka atas Ring UHMW di kantong Base)
+V3_DISC1_TOP = 308.3205     # muka atas piringan utama Ver3
+V3_PIN1 = 299.3205          # sumbu Pin index piringan utama Ver3
+V3_PINC_BOT = 278.3205      # dasar flens Pin center Ver3
+V3_POCKET_D = 10.0          # kantong Ring UHMW di Base Ver3
 R_DISC1 = 230.0
-T_DISC = 30.0               # tebal piringan bawah: 20 mm material di bawah kantong ring untuk lubang pin
-R_DISC = 440.0              # Ø880: menutup seluruh tapak dudukan ragum (sudut terjauh r≈437)
-POCKET_R, POCKET_D = 232.5, 10.0   # kantong Ring UHMW, sama dengan di Base
-Y_TOP = Y_RING_TOP + T_DISC
-DY = round(Y_TOP - Y_BASE_TOP, 4)  # = 32.0, kenaikan piringan utama + kedua ragum
+
+# Susunan baru
+Y_TABLE = V3_BASE_TOP - 20.0                 # muka atas meja kerja = dasar Base
+T_BASE = 5.0                                 # Base ditopang penuh oleh meja kerja
+T_RING, T_RING2, RECESS = 5.0, 3.0, 1.0      # ring UHMW bawah, ring UHMW atas, cekungan ring atas
+T_DISC = 20.0                                # piringan bawah (SF ±3 terhadap momen jepit ragum)
+R_DISC, HALF_W = 440.0, 350.0                # lingkaran Ø880 dipangkas jadi lajur 700 mm (|x| <= 350)
+RING_RI, RING_RO = 150.0, 232.0
+Y_BASE_TOP = Y_TABLE + T_BASE
+Y_RING_TOP = Y_BASE_TOP + T_RING             # dasar piringan bawah
+Y_TOP = Y_RING_TOP + T_DISC                  # muka atas piringan bawah = tempat dudukan ragum
+DY = round(Y_TOP - V3_BASE_TOP, 4)           # = 10: kenaikan piringan utama + kedua ragum terhadap Ver3
+FLANGE_CB = 2.0                              # cekungan bawah piringan bawah di atas flens Pin center
 
 # Kunci samping: lubang radial Ø10,5 (sama dengan piringan utama), ujung pin masuk ke Pin center
-IDX_R, PIN_R, PIN_TIP = 5.25, 5.0, 8.0          # ujung pin di r = 8 mm (12 mm di dalam Pin center)
-Y_LOCK = Y_RING_TOP + (T_DISC - POCKET_D) / 2   # sumbu pin bawah: tengah material di bawah kantong
-Y_LOCK1 = Y_PIN1 + DY                            # sumbu pin piringan utama setelah dinaikkan
+IDX_R, PIN_R, PIN_TIP = 5.25, 5.0, 8.0       # ujung pin di r = 8 mm (12 mm di dalam Pin center)
+Y_LOCK = Y_RING_TOP + T_DISC / 2             # sumbu pin bawah: tengah tebal piringan bawah
+Y_LOCK1 = V3_PIN1 + DY                       # sumbu pin piringan utama setelah dinaikkan
 
-# Base baru: persegi R100 yang menutup penuh piringan bawah + 20 mm
+# Base: persegi R100 920x920 (menutup lingkaran putar piringan bawah + 20 mm)
 BASE_HALF, BASE_RC = R_DISC + 20.0, 100.0
-BASE_OLD = (130.2205, 880.2205, -516.927, 293.073)  # X0, X1, Z0, Z1 Base Ver3 (sudut R100)
-T_BASE = 5.0                                  # tebal Base baru (plat ditopang penuh oleh meja kerja)
-Y_TABLE = Y_BASE_TOP - 20.0                   # muka atas meja kerja = dasar Base
-BASE_DROP = 20.0 - T_BASE - POCKET_D          # = 5: Base 15 mm lebih tipis, ring naik 10 mm keluar kantong
 MOUNT_HOLES = [(230.2205, 163.073), (780.2205, 163.073), (230.2205, -386.927), (780.2205, -386.927)]  # Ø40 ke meja
 
 UP = cq.Vector(0, 1, 0)
-# Tetap di tempat: Ring UHMW asli kini menopang piringan bawah, Pin center tetap dibaut ke Base
+# Tidak ikut dinaikkan DY (Base, ring bawah, dan Pin center dibuat ulang di posisi barunya)
 FIXED = {"Base (rev)", "Replika workbench", "Ring UHMW", "Pin center"}
 
 
@@ -99,7 +104,7 @@ def rounded_slab(x0, x1, z0, z1, rc, y0, y1):
 
 
 def base_holes(base):
-    """Lubang tap vertikal di muka atas Base: (x, z, r, kedalaman dari muka atasnya)."""
+    """Lubang tap vertikal Base Ver3: (x, z, r, jarak muka dari atas Base, kedalaman)."""
     holes = set()
     for f in cq.Shape.cast(base).Faces():
         if f.geomType() != "CYLINDER":
@@ -108,9 +113,9 @@ def base_holes(base):
         if abs(c.Axis().Direction().Y()) < 0.99 or round(c.Radius(), 2) not in (2.5, 5.1):
             continue
         bb = f.BoundingBox()
-        top = Y_BASE_TOP if bb.ymax > Y_BASE_TOP - 0.01 else Y_BASE_TOP - POCKET_D
+        top = V3_BASE_TOP if bb.ymax > V3_BASE_TOP - 0.01 else V3_BASE_TOP - V3_POCKET_D
         holes.add((round(c.Location().X(), 4), round(c.Location().Z(), 4), c.Radius(),
-                   round(Y_BASE_TOP - top, 4), round(top - bb.ymin, 4)))
+                   round(V3_BASE_TOP - top, 4), round(top - bb.ymin, 4)))
     return sorted(holes)
 
 
@@ -127,21 +132,29 @@ def build_base(base):
     return b.clean()
 
 
+def ring(y0, t, screws=()):
+    r = cyl(RING_RO, y0, y0 + t).cut(cyl(RING_RI, y0 - 1, y0 + t + 1))
+    for x, z in screws:                                        # baut L M6, kepala tenggelam
+        r = r.cut(cyl(3.3, y0 - 1, y0 + t + 1, x, z)).cut(cyl(5.5, y0 + t - 3.5, y0 + t + 1, x, z))
+    return r.clean()
+
+
 def build_lower_disc(base):
     d = cyl(R_DISC, Y_RING_TOP, Y_TOP)
+    d = d.intersect(cq.Solid.makeBox(2 * HALF_W, T_DISC + 2, 2 * R_DISC + 2,
+                                     cq.Vector(CX - HALF_W, Y_RING_TOP - 1, CZ - R_DISC - 1)))  # lajur 700 mm
     d = d.cut(cyl(25.0, Y_RING_TOP - 1, Y_TOP + 1))                       # lubang bushing Ø50
-    d = d.cut(cyl(POCKET_R, Y_TOP - POCKET_D, Y_TOP + 1))                 # kantong Ring UHMW atas
-    # Pola lubang disalin dari Base: 8x M12 dudukan ragum, 4x sekrup Ring UHMW (di dasar kantong).
-    for x, z, r, dtop, depth in base_holes(base):
-        if (x - CX) ** 2 + (z - CZ) ** 2 < 60 ** 2:                      # lubang flens Pin center
-            continue
-        y_face = Y_TOP - dtop
-        d = d.cut(cyl(r, y_face - depth, y_face + 1, x, z))
+    d = d.cut(cyl(43.0, Y_RING_TOP - 1, Y_RING_TOP + FLANGE_CB))          # bebas flens Pin center
+    d = d.cut(cyl(RING_RO + 0.5, Y_TOP - RECESS, Y_TOP + 1))              # cekungan ring UHMW atas
+    for x, z, r, dtop, depth in base_holes(base):                         # 8x tap M12 dudukan ragum
+        if r > 5:
+            d = d.cut(cyl(r, Y_TOP - depth, Y_TOP + 1, x, z))
     return radial_holes(d, Y_LOCK, 24.0, R_DISC + 1).clean()
 
 
 def build_bushing():
-    b = cyl(25.0, Y_RING_TOP, Y_TOP).cut(cyl(20.05, Y_RING_TOP - 1, Y_TOP + 1))
+    y0 = Y_RING_TOP + FLANGE_CB
+    b = cyl(25.0, y0, Y_TOP).cut(cyl(20.05, y0 - 1, Y_TOP + 1))
     return radial_holes(b, Y_LOCK, 19.0, 26.0).clean()
 
 
@@ -232,7 +245,8 @@ def main():
 
     # Pin center: tetap dibaut di Base; poros Ø40 diperpanjang sampai rata muka atas piringan utama,
     # + 2 lubang silang (sumbu X) penerima ujung pin kedua piringan
-    pin_c = solid("Pin center").fuse(cyl(20.0, Y_PIN_TOP - 0.5, Y_DISC1_TOP + DY))
+    pin_c = solid("Pin center").translate(cq.Vector(0, Y_BASE_TOP - V3_PINC_BOT, 0))   # flens di atas Base
+    pin_c = pin_c.fuse(cyl(20.0, Y_BASE_TOP + 20, V3_DISC1_TOP + DY))
     for y in (Y_LOCK, Y_LOCK1):
         pin_c = pin_c.cut(cq.Solid.makeCylinder(IDX_R, 60, cq.Vector(CX - 30, y, CZ), cq.Vector(1, 0, 0)))
     replace_part("Pin center", "Pin center (panjang)", bake(pin_c.clean()))
@@ -249,34 +263,21 @@ def main():
                                 cq.Vector(CX + PIN_TIP, Y_LOCK1, CZ), cq.Vector(1, 0, 0))
     replace_part("Pin index", "Pin index (panjang)", bake(pin1.fuse(ext).clean()))
 
-    add_part("Ring UHMW atas", world["Ring UHMW"].Moved(TopLoc_Location(shift)), color_of("Ring UHMW"))
+    screws = [(x, z) for x, z, r, dt, dp in base_holes(world["Base (rev)"]) if r < 3 and (x - CX) ** 2 + (z - CZ) ** 2 > 60 ** 2]
+    replace_part("Ring UHMW", "Ring UHMW", bake(ring(Y_BASE_TOP, T_RING, screws)))
+    add_part("Ring UHMW atas", ring(Y_TOP - RECESS, T_RING2).wrapped, color_of("Ring UHMW"))
     add_part("Piringan bawah", lower_disc.wrapped, color_of("Piringan (baru)"))
     add_part("Bushing perunggu bawah", build_bushing().wrapped, color_of("Bushing perunggu"))
 
     # Kunci piringan bawah (sisi -X): batang Ø10 dari Pin center sampai tepi + salinan knob asli
-    pin2 = cq.Solid.makeCylinder(PIN_R, R_DISC + 0.1 - PIN_TIP, cq.Vector(CX - PIN_TIP, Y_LOCK, CZ), cq.Vector(-1, 0, 0))
+    pin2 = cq.Solid.makeCylinder(PIN_R, HALF_W + 0.1 - PIN_TIP, cq.Vector(CX - PIN_TIP, Y_LOCK, CZ), cq.Vector(-1, 0, 0))
     add_part("Pin index bawah", pin2.wrapped, pin_col)
     knob = solid("Knob pin index").rotate(cq.Vector(CX, 0, CZ), cq.Vector(CX, 1, CZ), 180)
-    knob = knob.translate(cq.Vector(-(R_DISC - R_DISC1), Y_LOCK - Y_LOCK1, 0))
+    knob = knob.translate(cq.Vector(-(HALF_W - R_DISC1), Y_LOCK - Y_LOCK1, 0))
     add_part("Knob pin index bawah", bake(knob), color_of("Knob pin index"))
 
-    # Base 920x920x5 menutup penuh piringan bawah; semua part di atasnya turun BASE_DROP
+    # Base 920x920x5 menutup lingkaran putar piringan bawah
     replace_part("Base (rev)", "Base (rev)", bake(build_base(world["Base (rev)"])))
-    down = gp_Trsf()
-    down.SetTranslation(gp_Vec(0, -BASE_DROP, 0))
-    comps = TDF_LabelSequence()
-    st.GetComponents_s(root, comps)
-    for i in range(1, comps.Length() + 1):
-        c = comps.Value(i)
-        ref = TDF_Label()
-        st.GetReferredShape_s(c, ref)
-        nm = name_of(ref)
-        if nm in ("Base (rev)", "Replika workbench"):
-            continue
-        XCAFDoc_Location.Set_s(c, TopLoc_Location(down).Multiplied(st.GetLocation_s(c)))
-    for nm in list(world):
-        if nm not in ("Base (rev)", "Replika workbench"):
-            world[nm] = world[nm].Moved(TopLoc_Location(down))
     st.UpdateAssemblies()
 
     # Cek tabrakan antar part
@@ -298,7 +299,7 @@ def main():
     wr.Transfer(doc, STEPControl_AsIs)
     if wr.Write(DST) != IFSelect_RetDone:
         sys.exit("gagal menulis " + DST)
-    print("DY =", DY, "->", DST)
+    print("DY =", DY, "| alas TBU di atas meja =", round(V3_DISC1_TOP + DY - Y_TABLE, 2), "mm ->", DST)
 
 
 if __name__ == "__main__":

@@ -10,31 +10,40 @@
 
 ![Pratinjau Ver4 (piringan bawah merah, pin biru; warna hanya di gambar ini)](docs/preview_ver4_iso.png)
 
-Susunan dari bawah ke atas (satuan mm):
+Bagian baru dirampingkan ke faktor keamanan ±3. Susunan dari bawah ke atas (satuan mm):
 
-1. **Base (rev)** – plat 920 × 920 × **5** (sudut R100), ditopang penuh oleh meja kerja dan dijepit dengan baut + mur dari bawah meja lewat 4 lubang Ø40. Tanpa kantong; hanya 4 tap M6 untuk ring UHMW dan 4 tap M6 untuk flens Pin center.
-2. **Ring UHMW** (asli) – duduk di atas Base (tidak lagi di kantong), jadi bantalan piringan bawah.
-3. **Piringan bawah** (baru) – Ø880 × 30, berputar pada Pin center, di atas Ring UHMW (12 mm di atas Base).
-   - Lubang Ø50 di tengah untuk **Bushing perunggu bawah** (Ø50/Ø40,1 × 30).
-   - Kantong Ø465 dalam 10 untuk **Ring UHMW atas** + 4 lubang sekrup ring.
-   - 8× lubang tap M12 untuk baut kedua **Dudukan ragum** (pola sama dengan di Base).
+1. **Base (rev)** – plat SS400 920 × 920 × 5 (sudut R100), ditopang penuh oleh meja kerja dan dijepit lewat 4 lubang Ø40. Hanya ada 4 tap M6 untuk ring UHMW dan 4 tap M6 untuk flens Pin center.
+2. **Ring UHMW** – Ø464 / Ø300 × 5, di atas Base, 4 baut L M6 kepala tenggelam.
+3. **Piringan bawah** (baru) – plat SS400 20 mm, lingkaran Ø880 dipangkas menjadi lajur 700 mm sepanjang sumbu ragum (±81 kg).
+   - Lubang Ø50 di tengah untuk **Bushing perunggu bawah** (Ø50/Ø40,1 × 18) dan cekungan bawah Ø86 × 2 di atas flens Pin center.
+   - Cekungan Ø465 × 1 di muka atas untuk **Ring UHMW atas** (Ø464 / Ø300 × 3).
+   - 8× tap M12 untuk baut kedua **Dudukan ragum** (pola sama dengan Base Ver3).
    - 8× lubang radial Ø10,5 (tiap 45°) dari tepi sampai lubang tengah, untuk Pin index bawah.
-   - Tebal 30 agar di bawah kantong ring masih ada 20 mm material untuk lubang pin.
-4. **Ring UHMW atas** (salinan ring asli).
-5. **Piringan (baru)** (piringan utama), bushing, Pin index + knob, kedua ragum beserta stud, mur, vise holder, clamp, rod dan handle – **semuanya naik 27 mm** terhadap Ver3 (naik 32 mm karena piringan bawah, lalu turun 5 mm karena Base 20 → 5 mm), posisi XZ tidak berubah.
+4. **Piringan (baru)** (piringan utama), bushing, Pin index + knob, kedua ragum beserta stud, mur, vise holder, clamp, rod dan handle – **naik 10 mm** terhadap Ver3, posisi XZ tidak berubah. Jarak rahang ragum ke piringan utama sama seperti Ver3.
+5. Alas TBU (muka atas piringan utama) berada **50 mm** di atas meja kerja, sesuai REQ-02.
 
 ### Kunci samping (kedua piringan)
 
-Pin masuk dari tepi piringan, lurus ke tengah, dan ujungnya masuk ±12 mm ke lubang silang di **Pin center** yang diam. Tarik pin ±20 mm (sampai keluar dari bushing) agar piringan bisa diputar; kunci di kelipatan 45° saat salah satu lubang radial piringan segaris dengan lubang Pin center (sumbu X).
+Pin masuk dari tepi piringan, lurus ke tengah, dan ujungnya masuk ±12 mm ke lubang silang di **Pin center** yang diam. Tarik pin ±20 mm agar piringan bisa diputar; kunci di kelipatan 45°.
 
-- **Piringan utama**: **Pin index (panjang)** = Pin index asli yang diperpanjang ke dalam; knob tetap di tempatnya. 8 lubang radial piringan dan **Bushing perunggu** diteruskan sampai lubang tengah.
+- **Piringan utama**: **Pin index (panjang)** = Pin index asli yang diperpanjang ke dalam; knob tetap di tempatnya.
 - **Piringan bawah**: **Pin index bawah** (batang Ø10) + **Knob pin index bawah** (salinan knob asli) di sisi −X.
-- **Pin center (panjang)**: flens dibaut ke Base; poros Ø40 diperpanjang sampai rata muka atas piringan utama dan diberi 2 lubang silang Ø10,5 (satu per piringan).
+- **Pin center (panjang)**: flens dibaut ke Base; poros Ø40 sampai rata muka atas piringan utama, 2 lubang silang Ø10,5.
 
-Hasil pengecekan: celah pin–lubang 0,25 mm, pin center–bushing 0,05 mm, piringan bawah–Base 12 mm (setebal ring); tidak ada tumpang tindih antar part.
+### Faktor keamanan (target ±3)
+
+| Bagian | Beban penentu | n |
+|---|---|---|
+| Piringan bawah, potongan tengah (melewati lubang pin dan Ø50) | Momen jepit ragum F<sub>c</sub>·h = 10 829 N × 210 mm | 3,2 |
+| Piringan bawah, potongan lain | Sama | 4,2–4,8 |
+| Ulir M12 dudukan di piringan bawah (panjang ulir 18) | Tarik baut dari momen guling + preload | 3,9 |
+| Baut M12 dudukan | Sama; momen kencang dibatasi 37 N·m | ±3 |
+| Baut flens Pin center M6 (geser) | Torsi kerja 210 N·m saat terkunci | 3,4 |
+| Base 5 mm, ring UHMW 5/3 mm, bushing 18 mm | Berat; ditopang meja | > 4 |
+
+Hasil pengecekan CAD: celah pin–lubang 0,25 mm, pin center–bushing 0,05 mm, flens Pin center–piringan bawah 2 mm; tidak ada tumpang tindih antar part.
 
 ## Catatan
 
 - Base 920 × 920 sedikit keluar dari tepi meja kerja: ±31 mm di sisi +X dan ±51 mm di sisi +Z.
-- Muka atas piringan utama (alas TBU) berada 67 mm di atas meja kerja; REQ-02 di laporan meminta maksimal 50 mm (Ver3: 40 mm).
-- Berat piringan bawah baja Ø880 × 30 ≈ 120 kg.
+- Piringan utama (18 mm), dudukan ragum, vise holder, dan clamp adalah part Ver3 dan tidak diubah.
