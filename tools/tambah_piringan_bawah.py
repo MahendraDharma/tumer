@@ -3,9 +3,9 @@
 Input : Ver3 Jig Assembly ragum tetap.step
 Output: Ver4 Jig Assembly ragum putar.step
 
-Susunan baru (sumbu Y = atas, satuan mm), dirampingkan ke faktor keamanan ±3:
-  Meja kerja -> Base (plat 920x920x5) -> Ring UHMW 5 mm -> Piringan bawah (BARU, plat 20 mm,
-  lingkaran Ø880 dipangkas jadi lajur 700 mm sepanjang sumbu ragum) -> Ring UHMW atas 3 mm (di
+Susunan baru (sumbu Y = atas, satuan mm), dirampingkan ke faktor keamanan ±2,5:
+  Meja kerja -> Base (plat 660x660x5) -> Ring UHMW 5 mm -> Piringan bawah (BARU, plat 20 mm,
+  lingkaran Ø880 dipangkas jadi lajur 600 mm, ujung di bawah dudukan 360 mm) -> Ring UHMW atas 3 mm (di
   cekungan 1 mm) -> Piringan utama + kedua dudukan ragum (naik DY = 10 mm terhadap Ver3).
   Alas TBU (muka atas piringan utama) = 50 mm di atas meja kerja (REQ-02).
 
@@ -57,8 +57,9 @@ R_DISC1 = 230.0
 Y_TABLE = V3_BASE_TOP - 20.0                 # muka atas meja kerja = dasar Base
 T_BASE = 5.0                                 # Base ditopang penuh oleh meja kerja
 T_RING, T_RING2, RECESS = 5.0, 3.0, 1.0      # ring UHMW bawah, ring UHMW atas, cekungan ring atas
-T_DISC = 20.0                                # piringan bawah (SF ±3 terhadap momen jepit ragum)
-R_DISC, HALF_W = 440.0, 350.0                # lingkaran Ø880 dipangkas jadi lajur 700 mm (|x| <= 350)
+T_DISC = 20.0                                # piringan bawah (SF ±2,5 terhadap momen jepit ragum)
+R_DISC, HALF_W = 440.0, 300.0                # lingkaran Ø880 dipangkas jadi lajur 600 mm (|x| <= 300)
+END_Z, END_HALF = 270.0, 180.0               # di bawah dudukan (|z| > 270, lewat baris baut dalam): lebar 360 mm
 RING_RI, RING_RO = 150.0, 232.0
 Y_BASE_TOP = Y_TABLE + T_BASE
 Y_RING_TOP = Y_BASE_TOP + T_RING             # dasar piringan bawah
@@ -71,8 +72,8 @@ IDX_R, PIN_R, PIN_TIP = 5.25, 5.0, 8.0       # ujung pin di r = 8 mm (12 mm di d
 Y_LOCK = Y_RING_TOP + T_DISC / 2             # sumbu pin bawah: tengah tebal piringan bawah
 Y_LOCK1 = V3_PIN1 + DY                       # sumbu pin piringan utama setelah dinaikkan
 
-# Base: persegi R100 920x920 (menutup lingkaran putar piringan bawah + 20 mm)
-BASE_HALF, BASE_RC = R_DISC + 20.0, 100.0
+# Base: persegi 660x660 R60, cukup untuk 4 lubang Ø40 ke meja dan Ring UHMW (piringan bawah hanya bertumpu di ring)
+BASE_HALF, BASE_RC = 330.0, 60.0
 MOUNT_HOLES = [(230.2205, 163.073), (780.2205, 163.073), (230.2205, -386.927), (780.2205, -386.927)]  # Ø40 ke meja
 
 UP = cq.Vector(0, 1, 0)
@@ -142,7 +143,13 @@ def ring(y0, t, screws=()):
 def build_lower_disc(base):
     d = cyl(R_DISC, Y_RING_TOP, Y_TOP)
     d = d.intersect(cq.Solid.makeBox(2 * HALF_W, T_DISC + 2, 2 * R_DISC + 2,
-                                     cq.Vector(CX - HALF_W, Y_RING_TOP - 1, CZ - R_DISC - 1)))  # lajur 700 mm
+                                     cq.Vector(CX - HALF_W, Y_RING_TOP - 1, CZ - R_DISC - 1)))  # lajur 600 mm
+    for sz in (1, -1):                                                    # ujung di bawah dudukan: lebar 360 mm
+        for sx in (1, -1):
+            x0 = CX + sx * END_HALF if sx > 0 else CX - HALF_W - 1
+            z0 = CZ + END_Z if sz > 0 else CZ - R_DISC - 1
+            d = d.cut(cq.Solid.makeBox(HALF_W - END_HALF + 1, T_DISC + 2, R_DISC - END_Z + 1,
+                                       cq.Vector(x0, Y_RING_TOP - 1, z0)))
     d = d.cut(cyl(25.0, Y_RING_TOP - 1, Y_TOP + 1))                       # lubang bushing Ø50
     d = d.cut(cyl(43.0, Y_RING_TOP - 1, Y_RING_TOP + FLANGE_CB))          # bebas flens Pin center
     d = d.cut(cyl(RING_RO + 0.5, Y_TOP - RECESS, Y_TOP + 1))              # cekungan ring UHMW atas
@@ -276,7 +283,7 @@ def main():
     knob = knob.translate(cq.Vector(-(HALF_W - R_DISC1), Y_LOCK - Y_LOCK1, 0))
     add_part("Knob pin index bawah", bake(knob), color_of("Knob pin index"))
 
-    # Base 920x920x5 menutup lingkaran putar piringan bawah
+    # Base 660x660x5 di bawah Ring UHMW dan Pin center
     replace_part("Base (rev)", "Base (rev)", bake(build_base(world["Base (rev)"])))
     st.UpdateAssemblies()
 
