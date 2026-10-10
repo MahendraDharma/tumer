@@ -28,7 +28,7 @@ SRC = os.path.join(HERE, '..', 'Ver4 Jig Assembly ragum putar.step')
 DST = os.path.join(HERE, '..', 'Ver4 Jig + TBU terjepit.step')
 
 CX, CZ = 505.21, -111.927
-Y_DISC1_TOP = 317.3205            # muka atas piringan utama = alas TBU
+Y_DISC1_TOP = 318.3205            # muka atas piringan utama = alas TBU
 TBU_L, TBU_W = 500.0, 206.0       # panjang (melintang) x lebar (arah jepit ragum)
 VISE_TILT = math.degrees(math.atan2(0.0143, 0.9999))  # sumbu kedua ragum di Ver3 miring ±0,82° terhadap Z
 AX = cq.Vector(math.sin(math.radians(VISE_TILT)), 0, math.cos(math.radians(VISE_TILT)))
@@ -106,7 +106,7 @@ def state(parts, clamp=1.0, lift=0.0, angle=0.0, pins_out=False, with_tbu=True):
     for n, s in parts.items():
         if n.startswith(('Handle', 'Vise Rod')) and HANDLE_ROT:   # batang ulir + T-handle berputar bersama
             sg = 1 if 'atas' in n else -1
-            hub = cq.Vector(CX + sg * 7.66, 437.32, CZ + sg * 533.95)   # sumbu kepala batang ulir
+            hub = cq.Vector(CX + sg * 7.66, 438.32, CZ + sg * 533.95)   # sumbu kepala batang ulir
             s = s.rotate(hub, hub + AX, HANDLE_ROT)
         if n.startswith(MOVING):
             s = s.translate(AX * (-d if 'atas' in n else d))
@@ -129,6 +129,8 @@ COLORS = {'TBU - brake shoe': (0.30, 0.22, 0.16), 'TBU - shoe head': (0.45, 0.47
 def color_of(n):
     if n in COLORS: return COLORS[n]
     if n.startswith('TBU'): return (0.22, 0.40, 0.62)
+    if n.startswith('Thrust bearing'): return (0.93, 0.62, 0.10)
+    if n.startswith('Washer'): return (0.50, 0.55, 0.66)
     if n.startswith('Piringan bawah'): return (0.78, 0.18, 0.15)
     if n.startswith('Piringan'): return (0.10, 0.10, 0.11)
     if n.startswith('Base'): return (0.62, 0.66, 0.70)

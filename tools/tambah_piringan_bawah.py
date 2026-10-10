@@ -5,10 +5,12 @@ Output: Ver4 Jig Assembly ragum putar.step
 
 Susunan baru (sumbu Y = atas, satuan mm), dirampingkan ke faktor keamanan >= 2:
   Meja kerja -> Base (plat bulat Ø900x5, 8 baut benam M8) -> Ring UHMW 5 mm + 8 bantalan UHMW 5 mm
-  di bawah ujung piringan (ragum tidak mengambang) -> Piringan bawah (BARU, plat 19 mm,
+  di bawah ujung piringan (ragum tidak mengambang) -> Piringan bawah (BARU, plat 20 mm,
   lingkaran Ø880 dipangkas jadi lajur 600 mm, ujung di bawah dudukan 360 mm) -> Ring UHMW atas 3 mm (di
   cekungan 1 mm) -> Piringan utama + kedua dudukan ragum (naik DY = 9 mm terhadap Ver3).
-  Alas TBU (muka atas piringan utama) = 49 mm di atas meja kerja (REQ-02: <= 50 mm).
+  Alas TBU (muka atas piringan utama) = 50 mm di atas meja kerja (REQ-02: <= 50 mm).
+  Bearing: thrust bearing jarum AXK4060 + 2 washer AS4060 di bawah tiap piringan (bawah: di flens Pin center;
+  atas: di cekungan atas piringan bawah); bushing perunggu sebagai bantalan radial.
 
 Kunci kedua piringan dari samping: pin masuk dari tepi piringan, lurus ke tengah, dan ujungnya
 masuk ke lubang silang di Pin center (diam). Tarik pin agar piringan bisa diputar.
@@ -29,7 +31,7 @@ from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCP.BRepGProp import BRepGProp
 from OCP.GProp import GProp_GProps
 from OCP.IFSelect import IFSelect_RetDone
-from OCP.Quantity import Quantity_Color
+from OCP.Quantity import Quantity_Color, Quantity_TOC_RGB
 from OCP.STEPCAFControl import STEPCAFControl_Reader, STEPCAFControl_Writer
 from OCP.STEPControl import STEPControl_AsIs
 from OCP.TCollection import TCollection_ExtendedString
@@ -58,15 +60,24 @@ R_DISC1 = 230.0
 Y_TABLE = V3_BASE_TOP - 20.0                 # muka atas meja kerja = dasar Base
 T_BASE = 5.0                                 # Base ditopang penuh oleh meja kerja
 T_RING, T_RING2, RECESS = 5.0, 3.0, 1.0      # ring UHMW bawah, ring UHMW atas, cekungan ring atas
-T_DISC = 19.0                                # piringan bawah (SF >= 2 terhadap momen jepit ragum; 18 mm hanya 1,87)
+T_DISC = 20.0                                # piringan bawah (SF >= 2 terhadap momen jepit ragum, termasuk cekungan bearing)
 R_DISC, HALF_W = 440.0, 300.0                # lingkaran Ø880 dipangkas jadi lajur 600 mm (|x| <= 300)
 END_Z, END_HALF = 270.0, 180.0               # di bawah dudukan (|z| > 270, lewat baris baut dalam): lebar 360 mm
 RING_RI, RING_RO = 150.0, 232.0
 Y_BASE_TOP = Y_TABLE + T_BASE
 Y_RING_TOP = Y_BASE_TOP + T_RING             # dasar piringan bawah
 Y_TOP = Y_RING_TOP + T_DISC                  # muka atas piringan bawah = tempat dudukan ragum
-DY = round(Y_TOP - V3_BASE_TOP, 4)           # = 9: kenaikan piringan utama + kedua ragum terhadap Ver3
+DY = round(Y_TOP - V3_BASE_TOP, 4)           # = 10: kenaikan piringan utama + kedua ragum terhadap Ver3
 FLANGE_CB = 2.0                              # cekungan bawah piringan bawah di atas flens Pin center
+# Thrust bearing jarum AXK4060 (d40 x D60 x 2) + 2 washer AS4060 (1 mm) = 4 mm, satu set per piringan:
+#  - bawah: di atas flens Pin center (diam), menopang piringan bawah
+#  - atas : di cekungan atas piringan bawah, menopang piringan utama
+# Bushing perunggu tetap dipakai sebagai bantalan radial (pin pengunci harus lewat di tengah tebal plat).
+T_AXK, T_AS = 2.0, 1.0
+T_TB = T_AXK + 2 * T_AS
+TB_POCKET_R = 31.0                           # cekungan Ø62 untuk bearing (D = 60)
+FLANGE_TB = 1.0                              # bearing bawah dibenamkan 1 mm ke flens Pin center
+Y_TB1 = Y_RING_TOP - FLANGE_TB               # dasar set bearing bawah (puncaknya Y_TB1 + T_TB)
 
 # Kunci samping: lubang radial Ø10,5 (sama dengan piringan utama), ujung pin masuk ke Pin center
 IDX_R, PIN_R, PIN_TIP = 5.25, 5.0, 8.0       # ujung pin di r = 8 mm (12 mm di dalam Pin center)
@@ -166,6 +177,7 @@ def build_lower_disc(base):
                                        cq.Vector(x0, Y_RING_TOP - 1, z0)))
     d = d.cut(cyl(25.0, Y_RING_TOP - 1, Y_TOP + 1))                       # lubang bushing Ø50
     d = d.cut(cyl(43.0, Y_RING_TOP - 1, Y_RING_TOP + FLANGE_CB))          # bebas flens Pin center
+    d = d.cut(cyl(TB_POCKET_R, Y_RING_TOP - 1, Y_TB1 + T_TB))             # cekungan thrust bearing bawah
     d = d.cut(cyl(RING_RO + 0.5, Y_TOP - RECESS, Y_TOP + 1))              # cekungan ring UHMW atas
     for x, z, r, dtop, depth in base_holes(base):                         # 8x tap M12 dudukan ragum
         if r > 5:
@@ -174,9 +186,22 @@ def build_lower_disc(base):
 
 
 def build_bushing():
-    y0 = Y_RING_TOP + FLANGE_CB
-    b = cyl(25.0, y0, Y_TOP).cut(cyl(20.05, y0 - 1, Y_TOP + 1))
+    y0, y1 = Y_TB1 + T_TB, Y_TOP - RECESS                                 # di antara kedua bearing
+    b = cyl(25.0, y0, y1).cut(cyl(20.05, y0 - 1, y1 + 1))
     return radial_holes(b, Y_LOCK, 19.0, 26.0).clean()
+
+
+def build_thrust(y0):
+    """AXK4060 + 2 x AS4060 mulai dari y0 (ke atas). Sangkar disederhanakan, 30 jarum Ø2 x 7,8."""
+    w1 = cyl(30.0, y0, y0 + T_AS).cut(cyl(20.1, y0 - 1, y0 + T_AS + 1))
+    w2 = w1.translate(cq.Vector(0, T_AS + T_AXK, 0))
+    yc = y0 + T_AS + T_AXK / 2
+    cage = cyl(29.5, yc - 0.4, yc + 0.4).cut(cyl(20.6, yc - 1, yc + 1))
+    for k in range(30):
+        a = math.radians(12 * k)
+        u = cq.Vector(math.cos(a), 0, math.sin(a))
+        cage = cage.fuse(cq.Solid.makeCylinder(T_AXK / 2 - 0.01, 7.8, cq.Vector(CX, yc, CZ) + u * 21.1, u))
+    return w1.clean(), cage.clean(), w2.clean()
 
 
 def name_of(lab):
@@ -270,13 +295,20 @@ def main():
     pin_c = pin_c.fuse(cyl(20.0, Y_BASE_TOP + 20, V3_DISC1_TOP + DY))
     for y in (Y_LOCK, Y_LOCK1):
         pin_c = pin_c.cut(cq.Solid.makeCylinder(IDX_R, 60, cq.Vector(CX - 30, y, CZ), cq.Vector(1, 0, 0)))
+    pin_c = pin_c.cut(cyl(TB_POCKET_R, Y_TB1, Y_RING_TOP + 0.01).cut(cyl(20.0, Y_TB1 - 1, Y_RING_TOP + 1)))  # dudukan bearing
+    for sx in (-21.9, 21.9):                      # baut flens jadi kepala benam M6 (di bawah washer bearing)
+        for sz in (-21.9, 21.9):
+            pin_c = csk(pin_c, CX + sx, CZ + sz, Y_TB1, 3.3, 6.2).cut(cyl(6.2, Y_TB1, Y_RING_TOP + 1, CX + sx, CZ + sz))
     replace_part("Pin center", "Pin center (panjang)", bake(pin_c.clean()))
 
-    # Piringan utama + bushing-nya: 8 lubang radial diteruskan sampai lubang tengah
-    replace_part("Piringan (baru)", "Piringan (baru)",
-                 bake(radial_holes(solid("Piringan (baru)"), Y_LOCK1, 24.0, R_DISC1 + 1).clean()))
-    replace_part("Bushing perunggu", "Bushing perunggu",
-                 bake(radial_holes(solid("Bushing perunggu"), Y_LOCK1, 19.0, 26.0).clean()))
+    # Piringan utama + bushing-nya: 8 lubang radial diteruskan sampai lubang tengah; cekungan Ø62 x 1 di
+    # muka bawah untuk thrust bearing atas (bushing dipendekkan 1 mm)
+    y_d1 = V3_DISC1_BOT + DY
+    tb_up = Y_TOP - RECESS + T_TB - y_d1                                   # = 1 mm
+    disc1 = radial_holes(solid("Piringan (baru)"), Y_LOCK1, 24.0, R_DISC1 + 1)
+    replace_part("Piringan (baru)", "Piringan (baru)", bake(disc1.cut(cyl(TB_POCKET_R, y_d1 - 1, y_d1 + tb_up)).clean()))
+    bush1 = radial_holes(solid("Bushing perunggu"), Y_LOCK1, 19.0, 26.0)
+    replace_part("Bushing perunggu", "Bushing perunggu", bake(bush1.cut(cyl(26.0, y_d1 - 1, y_d1 + tb_up)).clean()))
 
     # Pin index asli diperpanjang ke dalam sampai ujungnya masuk ke Pin center (knob tetap)
     pin1, pin_col = solid("Pin index"), color_of("Pin index")
@@ -289,6 +321,12 @@ def main():
     add_part("Ring UHMW atas", ring(Y_TOP - RECESS, T_RING2).wrapped, color_of("Ring UHMW"))
     add_part("Piringan bawah", lower_disc.wrapped, color_of("Piringan (baru)"))
     add_part("Bushing perunggu bawah", build_bushing().wrapped, color_of("Bushing perunggu"))
+    steel = Quantity_Color(0.72, 0.74, 0.78, Quantity_TOC_RGB)
+    for tag, y0 in (("bawah", Y_TB1), ("atas", Y_TOP - RECESS)):
+        w1, cage, w2 = build_thrust(y0)
+        add_part(f"Washer AS4060 {tag} 1", w1.wrapped, steel)
+        add_part(f"Thrust bearing AXK4060 {tag}", cage.wrapped, steel)
+        add_part(f"Washer AS4060 {tag} 2", w2.wrapped, steel)
 
     # Kunci piringan bawah (sisi -X): batang Ø10 dari Pin center sampai tepi + salinan knob asli
     pin2 = cq.Solid.makeCylinder(PIN_R, HALF_W + 0.1 - PIN_TIP, cq.Vector(CX - PIN_TIP, Y_LOCK, CZ), cq.Vector(-1, 0, 0))

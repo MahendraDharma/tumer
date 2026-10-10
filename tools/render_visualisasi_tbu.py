@@ -11,7 +11,7 @@ from OCP.BRep import BRep_Tool
 from OCP.TopoDS import TopoDS
 import vtk
 from PIL import Image, ImageDraw, ImageFont
-OUT = sys.argv[1]
+OUT = sys.argv[1] if len(sys.argv) > 1 else '.'
 P = read_parts()
 W, H = 1500, 1100
 FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
@@ -85,70 +85,75 @@ def rotp(p, deg):  # putar titik dunia terhadap sumbu jig
 f_t = ImageFont.truetype(FONTB, 38); f_s = ImageFont.truetype(FONT, 27); f_l = ImageFont.truetype(FONT, 25)
 TOP = Y_DISC1_TOP + 372
 
-# ---- 4 langkah ----
-steps = [
-    (dict(clamp=0, lift=170), '1. Letakkan TBU', 'Rahang terbuka. Turunkan TBU (muka mounting di bawah)\nke tengah piringan utama.'),
-    (dict(clamp=1), '2. Jepit TBU', 'Putar handle kedua ragum sampai rahang menekan\nkedua sisi lebar TBU (±129 mm per sisi).'),
-    (dict(clamp=1, angle=45, pins_out=True), '3. Tarik pin, putar', 'Tarik kedua pin index ±20 mm dari Pin center.\nPutar piringan: TBU dan kedua ragum ikut berputar.'),
-    (dict(clamp=1, angle=180), '4. Kunci, kerjakan', 'Setelah 180°, masukkan kembali kedua pin.\nTBU terkunci, sisi sebaliknya bisa dikerjakan.'),
-]
-panels = []
-for kw, title, sub in steps:
-    img, proj = render(state(P, **kw)); d = ImageDraw.Draw(img)
-    a = kw.get('angle', 0)
-    if kw.get('lift'):
-        p0 = proj((CX, TOP + 330, CZ)); p1 = proj((CX, TOP + 200, CZ)); arrow(d, p0, p1)
-        for sgn, side in ((1, 'atas'), (-1, 'bawah')):
-            q = proj((CX, 470, CZ + sgn * 225)); r = proj((CX, 470, CZ + sgn * 340)); arrow(d, q, r, col=(40, 120, 200))
-    elif kw.get('clamp') and not a:
-        for sgn in (1, -1):
-            q = proj((CX, 470, CZ + sgn * 250)); r = proj((CX, 470, CZ + sgn * 140)); arrow(d, q, r)
-        label(d, proj((CX + 40, 620, CZ + 410)), 'putar handle', f_l, anchor='mm')
-        label(d, proj((CX + 40, 620, CZ - 410)), 'putar handle', f_l, anchor='mm')
-    elif kw.get('pins_out'):
-        q = proj(rotp((CX + 250, 310, CZ), a)); r = proj(rotp((CX + 330, 310, CZ), a)); arrow(d, q, r)
-        label(d, proj(rotp((CX + 330, 420, CZ), a)), 'tarik pin', f_l, anchor='mm')
-        pts = [proj(rotp((CX + 420 * math.cos(math.radians(t)), 330, CZ + 420 * math.sin(math.radians(t))), 0)) for t in range(-70, 10, 4)]
-        d.line(pts, fill=(220, 60, 20), width=7); arrow(d, pts[-2], pts[-1])
-    else:
-        for px, side in ((-307, -1),):
-            k = proj(rotp((CX + px, 300, CZ), a)); t = (k[0] + 40, k[1] + 120 * side)
-            d.line([k, t], fill=(80, 80, 80), width=3); d.ellipse((k[0] - 7, k[1] - 7, k[0] + 7, k[1] + 7), fill=(220, 60, 20))
-            label(d, t, 'pin masuk = terkunci', f_l, anchor='lm')
-    panels.append((img, title, sub))
+def main():
+    # ---- 4 langkah ----
+    steps = [
+        (dict(clamp=0, lift=170), '1. Letakkan TBU', 'Rahang terbuka. Turunkan TBU (muka mounting di bawah)\nke tengah piringan utama.'),
+        (dict(clamp=1), '2. Jepit TBU', 'Putar handle kedua ragum sampai rahang menekan\nkedua sisi lebar TBU (±129 mm per sisi).'),
+        (dict(clamp=1, angle=45, pins_out=True), '3. Tarik pin, putar', 'Tarik kedua pin index ±20 mm dari Pin center.\nPutar piringan: TBU dan kedua ragum ikut berputar.'),
+        (dict(clamp=1, angle=180), '4. Kunci, kerjakan', 'Setelah 180°, masukkan kembali kedua pin.\nTBU terkunci, sisi sebaliknya bisa dikerjakan.'),
+    ]
+    panels = []
+    for kw, title, sub in steps:
+        img, proj = render(state(P, **kw)); d = ImageDraw.Draw(img)
+        a = kw.get('angle', 0)
+        if kw.get('lift'):
+            p0 = proj((CX, TOP + 330, CZ)); p1 = proj((CX, TOP + 200, CZ)); arrow(d, p0, p1)
+            for sgn, side in ((1, 'atas'), (-1, 'bawah')):
+                q = proj((CX, 470, CZ + sgn * 225)); r = proj((CX, 470, CZ + sgn * 340)); arrow(d, q, r, col=(40, 120, 200))
+        elif kw.get('clamp') and not a:
+            for sgn in (1, -1):
+                q = proj((CX, 470, CZ + sgn * 250)); r = proj((CX, 470, CZ + sgn * 140)); arrow(d, q, r)
+            label(d, proj((CX + 40, 620, CZ + 410)), 'putar handle', f_l, anchor='mm')
+            label(d, proj((CX + 40, 620, CZ - 410)), 'putar handle', f_l, anchor='mm')
+        elif kw.get('pins_out'):
+            q = proj(rotp((CX + 250, 310, CZ), a)); r = proj(rotp((CX + 330, 310, CZ), a)); arrow(d, q, r)
+            label(d, proj(rotp((CX + 330, 420, CZ), a)), 'tarik pin', f_l, anchor='mm')
+            pts = [proj(rotp((CX + 420 * math.cos(math.radians(t)), 330, CZ + 420 * math.sin(math.radians(t))), 0)) for t in range(-70, 10, 4)]
+            d.line(pts, fill=(220, 60, 20), width=7); arrow(d, pts[-2], pts[-1])
+        else:
+            for px, side in ((-307, -1),):
+                k = proj(rotp((CX + px, 300, CZ), a)); t = (k[0] + 40, k[1] + 120 * side)
+                d.line([k, t], fill=(80, 80, 80), width=3); d.ellipse((k[0] - 7, k[1] - 7, k[0] + 7, k[1] + 7), fill=(220, 60, 20))
+                label(d, t, 'pin masuk = terkunci', f_l, anchor='lm')
+        panels.append((img, title, sub))
 
-PW, PH, TB = 1500, 1100, 150
-sheet = Image.new('RGB', (PW * 2, (PH + TB) * 2 + 160), 'white'); d = ImageDraw.Draw(sheet)
-d.text((40, 40), 'Cara penggunaan Jig Ragum Putar dengan TBU', font=ImageFont.truetype(FONTB, 52), fill=(20, 20, 20))
-d.text((40, 105), 'Model TBU disederhanakan (envelope ±500 × 206 mm); ragum menjepit sisi lebar TBU. Warna hanya untuk visualisasi.', font=f_s, fill=(90, 90, 90))
-for i, (img, title, sub) in enumerate(panels):
-    x, y = (i % 2) * PW, 160 + (i // 2) * (PH + TB)
-    sheet.paste(img, (x, y + TB)); d.rectangle((x + 8, y + 8, x + PW - 8, y + TB + PH - 8), outline=(200, 200, 200), width=3)
-    d.text((x + 40, y + 30), title, font=f_t, fill=(20, 20, 20))
-    d.multiline_text((x + 40, y + 85), sub, font=f_s, fill=(60, 60, 60), spacing=8)
-sheet.save(os.path.join(OUT, 'langkah_penggunaan.png'))
+    PW, PH, TB = 1500, 1100, 150
+    sheet = Image.new('RGB', (PW * 2, (PH + TB) * 2 + 160), 'white'); d = ImageDraw.Draw(sheet)
+    d.text((40, 40), 'Cara penggunaan Jig Ragum Putar dengan TBU', font=ImageFont.truetype(FONTB, 52), fill=(20, 20, 20))
+    d.text((40, 105), 'Model TBU disederhanakan (envelope ±500 × 206 mm); ragum menjepit sisi lebar TBU. Warna hanya untuk visualisasi.', font=f_s, fill=(90, 90, 90))
+    for i, (img, title, sub) in enumerate(panels):
+        x, y = (i % 2) * PW, 160 + (i // 2) * (PH + TB)
+        sheet.paste(img, (x, y + TB)); d.rectangle((x + 8, y + 8, x + PW - 8, y + TB + PH - 8), outline=(200, 200, 200), width=3)
+        d.text((x + 40, y + 30), title, font=f_t, fill=(20, 20, 20))
+        d.multiline_text((x + 40, y + 85), sub, font=f_s, fill=(60, 60, 60), spacing=8)
+    sheet.save(os.path.join(OUT, 'langkah_penggunaan.png'))
 
-# ---- gambar utama dengan keterangan ----
-HW, HH = 2600, 1700
-img, proj = render(state(P, clamp=1), size=(HW, HH), zoom=1.45); d = ImageDraw.Draw(img)
-f_c = ImageFont.truetype(FONT, 36)
-left = [((CX + 78, 440, CZ + 140), 'Rahang (clamp) ragum'),
-        ((CX + 6, 437, CZ + 405), 'Handle: putar untuk menjepit / melepas'),
-        ((CX + 80, 500, CZ + 330), 'Vise holder (dibaut ke piringan bawah)')]
-right = [((CX + 150, 420, CZ + 20), 'TBU (dijepit di sisi lebarnya)'),
-         ((CX + 210, 318, CZ - 95), 'Piringan utama (alas TBU)'),
-         ((CX + 300, 288, CZ - 250), 'Piringan bawah (dudukan ragum)'),
-         ((CX + 237, 308, CZ), 'Pin index: kunci piringan utama'),
-         ((CX + 340, 276, CZ), 'Bantalan UHMW (diam)'),
-         ((CX + 400, 273.3, CZ + 190), 'Base Ø900 (dibaut ke meja)')]
-for items, x, anc in ((left, 50, 'lm'), (right, HW - 50, 'rm')):
-    ys = [260 + k * (HH - 380) / max(1, len(items) - 1) for k in range(len(items))]
-    for (p, t), y in zip(items, ys):
-        a = proj(p); bb = d.textbbox((x, y), t, font=f_c, anchor=anc)
-        e = (bb[2] + 12, y) if anc == 'lm' else (bb[0] - 12, y)
-        d.line([a, e], fill=(80, 80, 80), width=3); d.ellipse((a[0] - 8, a[1] - 8, a[0] + 8, a[1] + 8), fill=(220, 60, 20))
-        label(d, (x, y), t, f_c, anchor=anc)
-d.text((50, 40), 'Jig Ragum Putar Ver4 dengan TBU terjepit', font=ImageFont.truetype(FONTB, 56), fill=(20, 20, 20))
-d.text((50, 115), 'TBU (model disederhanakan, ±500 × 206 mm) dijepit di sisi lebarnya. Kedua piringan, kedua ragum, dan TBU berputar bersama.', font=f_s, fill=(90, 90, 90))
-img.save(os.path.join(OUT, 'tbu_terjepit_keterangan.png'))
-print('ok')
+    # ---- gambar utama dengan keterangan ----
+    HW, HH = 2600, 1700
+    img, proj = render(state(P, clamp=1), size=(HW, HH), zoom=1.45); d = ImageDraw.Draw(img)
+    f_c = ImageFont.truetype(FONT, 36)
+    left = [((CX + 78, 440, CZ + 140), 'Rahang (clamp) ragum'),
+            ((CX + 6, 437, CZ + 405), 'Handle: putar untuk menjepit / melepas'),
+            ((CX + 80, 500, CZ + 330), 'Vise holder (dibaut ke piringan bawah)')]
+    right = [((CX + 150, 420, CZ + 20), 'TBU (dijepit di sisi lebarnya)'),
+             ((CX + 210, 318, CZ - 95), 'Piringan utama (alas TBU)'),
+             ((CX + 300, 288, CZ - 250), 'Piringan bawah (dudukan ragum)'),
+             ((CX + 237, 308, CZ), 'Pin index: kunci piringan utama'),
+             ((CX + 340, 276, CZ), 'Bantalan UHMW (diam)'),
+             ((CX + 400, 273.3, CZ + 190), 'Base Ø900 (dibaut ke meja)')]
+    for items, x, anc in ((left, 50, 'lm'), (right, HW - 50, 'rm')):
+        ys = [260 + k * (HH - 380) / max(1, len(items) - 1) for k in range(len(items))]
+        for (p, t), y in zip(items, ys):
+            a = proj(p); bb = d.textbbox((x, y), t, font=f_c, anchor=anc)
+            e = (bb[2] + 12, y) if anc == 'lm' else (bb[0] - 12, y)
+            d.line([a, e], fill=(80, 80, 80), width=3); d.ellipse((a[0] - 8, a[1] - 8, a[0] + 8, a[1] + 8), fill=(220, 60, 20))
+            label(d, (x, y), t, f_c, anchor=anc)
+    d.text((50, 40), 'Jig Ragum Putar Ver4 dengan TBU terjepit', font=ImageFont.truetype(FONTB, 56), fill=(20, 20, 20))
+    d.text((50, 115), 'TBU (model disederhanakan, ±500 × 206 mm) dijepit di sisi lebarnya. Kedua piringan, kedua ragum, dan TBU berputar bersama.', font=f_s, fill=(90, 90, 90))
+    img.save(os.path.join(OUT, 'tbu_terjepit_keterangan.png'))
+    print('ok')
+
+
+if __name__ == '__main__':
+    main()
