@@ -14,11 +14,12 @@
 Bagian baru dirampingkan ke faktor keamanan ≥ 2 (spesifikasi kelompok). Susunan dari bawah ke atas (satuan mm):
 
 1. **Base (rev)** – plat bulat SS400 Ø900 × 5 yang menutup seluruh area putar, ditopang penuh oleh meja kerja dan diikat dengan **8 baut kepala benam M8** (rata permukaan, mur di bawah meja). Ada 4 tap M6 untuk ring UHMW, 4 tap M6 untuk flens Pin center, dan 8 tap M6 untuk bantalan UHMW.
-2. **Ring UHMW** – Ø464 / Ø300 × 5, di atas Base, 4 baut L M6 kepala tenggelam.
-   **8 Bantalan UHMW** – 70 × 60 × 5 di r ≈ 330 (tiap 45°), di bawah ujung piringan bawah tempat ragum, jadi ragum tidak mengambang. Setiap bantalan diikat 1 baut benam M6.
+2. **Ring UHMW** – Ø464 / Ø300 × 4, di atas Base, 4 baut benam M6.
+   **8 Bantalan UHMW** – 70 × 60 × 4 di r ≈ 330 (tiap 45°), di bawah ujung piringan bawah tempat ragum. Setiap bantalan diikat 1 baut benam M6.
+   Ring dan bantalan berjarak **1 mm** di bawah piringan, jadi berat dipikul bearing. UHMW baru menumpu bila piringan miring karena beban samping, atau melendut saat dijepit kuat.
 3. **Piringan bawah** (baru) – plat SS400 20 mm, lingkaran Ø880 dipangkas menjadi lajur 600 mm sepanjang sumbu ragum; di bawah dudukan (lebih dari 270 mm dari sumbu) lebarnya 360 mm (±65 kg).
    - Lubang Ø50 di tengah untuk **Bushing perunggu bawah** (Ø50/Ø40,1 × 15), cekungan bawah Ø86 × 2 di atas flens Pin center, dan cekungan Ø62 × 3 untuk thrust bearing bawah.
-   - Cekungan Ø465 × 1 di muka atas untuk **Ring UHMW atas** (Ø464 / Ø300 × 3).
+   - Cekungan Ø465 × 1 di muka atas untuk **Ring UHMW atas** (Ø464 / Ø300 × 2, celah 1 mm ke piringan utama).
    - 8× tap M12 untuk baut kedua **Dudukan ragum** (pola sama dengan Base Ver3).
    - 8× lubang radial Ø10,5 (tiap 45°) dari tepi sampai lubang tengah, untuk Pin index bawah.
 4. **Piringan (baru)** (piringan utama), bushing, Pin index + knob, kedua ragum beserta stud, mur, vise holder, clamp, rod dan handle – **naik 10 mm** terhadap Ver3, posisi XZ tidak berubah. Jarak rahang ragum ke piringan utama sama seperti Ver3. Piringan utama diberi cekungan Ø62 × 1 di muka bawah untuk thrust bearing atas, dan bushing-nya dipendekkan 1 mm (Ø50/Ø40,1 × 17).
@@ -32,7 +33,9 @@ Setiap piringan berputar di atas satu **thrust bearing jarum AXK4060** (d40 × D
 - **Set bawah**: dibenamkan 1 mm di flens Pin center (diam) dan menopang piringan bawah. Baut flens diganti baut benam M6 supaya rata di bawah washer.
 - **Set atas**: di cekungan atas piringan bawah dan menopang piringan utama.
 
-Bearing bola 51108 (tinggi 13 mm) dan 6008 (lebar 15 mm) tidak dipakai: keduanya hanya muat kalau jig dinaikkan atau pin pengunci, yang lewat di tengah tebal plat, dipindahkan. Ring dan bantalan UHMW tetap menopang bagian luar piringan.
+Analisis lengkapnya ada di BAB IV laporan: gaya putar ±22 N (REQ-07 ≤ 50 N) dengan celah UHMW 1 mm. Tanpa celah, berat bertumpu pada UHMW dan gaya putar naik menjadi ±360 N.
+
+Bearing bola 51108 (tinggi 13 mm) dan 6008 (lebar 15 mm) tidak dipakai: keduanya hanya muat kalau jig dinaikkan atau pin pengunci, yang lewat di tengah tebal plat, dipindahkan. Ring dan bantalan UHMW tetap ada sebagai penahan miring di bagian luar piringan.
 
 ### Kunci samping (kedua piringan)
 
@@ -52,7 +55,7 @@ Pin masuk dari tepi piringan, lurus ke tengah, dan ujungnya masuk ±12 mm ke lub
 | Ulir M12 dudukan di piringan bawah (plat 20, ulir terpakai 18) | Tarik baut dari momen guling + preload | 3,9 |
 | Baut M12 dudukan | Sama; momen kencang dibatasi 37 N·m | ±3 |
 | Baut flens Pin center M6 (geser) | Torsi kerja 210 N·m saat terkunci | 3,4 |
-| Base 5 mm, ring dan bantalan UHMW 5/3 mm, bushing 15/17 mm | Berat; ditopang meja | > 4 |
+| Base 5 mm, ring dan bantalan UHMW 4/2 mm, bushing 15/17 mm | Berat; ditopang meja | > 4 |
 | Thrust bearing AXK4060 | Berat piringan + TBU (< 1,5 kN per bearing) | jauh di atas kebutuhan |
 
 Berat total jig (tanpa TBU dan meja): ±188 kg.
