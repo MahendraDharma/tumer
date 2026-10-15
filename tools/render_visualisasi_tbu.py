@@ -83,12 +83,12 @@ def rotp(p, deg):  # putar titik dunia terhadap sumbu jig
     return (CX + x * math.cos(a) + z * math.sin(a), y, CZ - x * math.sin(a) + z * math.cos(a))
 
 f_t = ImageFont.truetype(FONTB, 38); f_s = ImageFont.truetype(FONT, 27); f_l = ImageFont.truetype(FONT, 25)
-TOP = Y_DISC1_TOP + 372
+TOP = Y_DISC1_TOP + 320
 
 def main():
     # ---- 4 langkah ----
     steps = [
-        (dict(clamp=0, lift=170), '1. Letakkan TBU', 'Rahang terbuka. Turunkan TBU (muka mounting di bawah)\nke tengah piringan utama.'),
+        (dict(clamp=0, lift=170), '1. Letakkan TBU', 'Rahang terbuka. Turunkan TBU dalam posisi tegak\nke tengah piringan utama.'),
         (dict(clamp=1), '2. Jepit TBU', 'Putar handle kedua ragum sampai rahang menekan\nkedua sisi lebar TBU (±129 mm per sisi).'),
         (dict(clamp=1, angle=45, pins_out=True), '3. Tarik pin, putar', 'Tarik kedua pin index ±20 mm dari Pin center.\nPutar piringan: TBU dan kedua ragum ikut berputar.'),
         (dict(clamp=1, angle=180), '4. Kunci, kerjakan', 'Setelah 180°, masukkan kembali kedua pin.\nTBU terkunci, sisi sebaliknya bisa dikerjakan.'),
@@ -121,7 +121,7 @@ def main():
     PW, PH, TB = 1500, 1100, 150
     sheet = Image.new('RGB', (PW * 2, (PH + TB) * 2 + 160), 'white'); d = ImageDraw.Draw(sheet)
     d.text((40, 40), 'Cara penggunaan Jig Ragum Putar dengan TBU', font=ImageFont.truetype(FONTB, 52), fill=(20, 20, 20))
-    d.text((40, 105), 'Model TBU disederhanakan (envelope ±500 × 206 mm); ragum menjepit sisi lebar TBU. Warna hanya untuk visualisasi.', font=f_s, fill=(90, 90, 90))
+    d.text((40, 105), 'Model TBU disederhanakan dari foto (±510 × 206 mm); ragum menjepit sisi lebar TBU.', font=f_s, fill=(90, 90, 90))
     for i, (img, title, sub) in enumerate(panels):
         x, y = (i % 2) * PW, 160 + (i // 2) * (PH + TB)
         sheet.paste(img, (x, y + TB)); d.rectangle((x + 8, y + 8, x + PW - 8, y + TB + PH - 8), outline=(200, 200, 200), width=3)
@@ -150,7 +150,7 @@ def main():
             d.line([a, e], fill=(80, 80, 80), width=3); d.ellipse((a[0] - 8, a[1] - 8, a[0] + 8, a[1] + 8), fill=(220, 60, 20))
             label(d, (x, y), t, f_c, anchor=anc)
     d.text((50, 40), 'Jig Ragum Putar Ver4 dengan TBU terjepit', font=ImageFont.truetype(FONTB, 56), fill=(20, 20, 20))
-    d.text((50, 115), 'TBU (model disederhanakan, ±500 × 206 mm) dijepit di sisi lebarnya. Kedua piringan, kedua ragum, dan TBU berputar bersama.', font=f_s, fill=(90, 90, 90))
+    d.text((50, 115), 'TBU (model dari foto, ±510 × 206 mm) dijepit di sisi lebarnya. Kedua piringan, kedua ragum, dan TBU berputar bersama.', font=f_s, fill=(90, 90, 90))
     img.save(os.path.join(OUT, 'tbu_terjepit_keterangan.png'))
     print('ok')
 
