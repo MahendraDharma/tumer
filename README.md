@@ -79,7 +79,7 @@ Hasil pengecekan CAD: celah pin–lubang 0,25 mm, pin center–bushing 0,05 mm, 
 3. Tarik kedua pin index ±20 mm dari Pin center, lalu putar piringan. TBU, kedua ragum, dan kedua piringan berputar bersama.
 4. Setelah 180°, masukkan kembali kedua pin. TBU terkunci dan sisi sebaliknya bisa dikerjakan.
 
-Model TBU dibuat mengikuti foto TBU Nabtesco 3.5/1R (panjang ±510 mm, lebar 206 mm): silinder rem tegak dengan flens berbaut dan pipa siku, badan cor miring, lengan tuas dengan dua pin, shoe head dengan alur blok rem, tutup bundar dan nameplate di sisi depan, serta poros penyetel. Bentuknya disederhanakan, bukan geometri asli.
+Model TBU dibuat mengikuti foto TBU Nabtesco 3.5/1R (panjang ±510 mm, lebar 206 mm): silinder rem tegak dengan flens berbaut dan pipa siku, badan cor dengan kontur bawah seperti aslinya (sudut kiri membulat, alas rata, perut turun ±80 mm dengan tutup bundar, lalu naik ke ujung kanan), lengan tuas dengan dua pin, shoe head dengan alur blok rem, tutup bundar dan nameplate di sisi depan, serta poros penyetel. Bentuknya disederhanakan, bukan geometri asli. Di jig, titik terendah TBU (tutup bawah perut) berada 0,5 mm di atas piringan utama, sehingga alas ratanya ±80 mm di atas piringan.
 
 ![Model TBU](docs/model_tbu.png) Kedua ragum di Ver3 terpasang miring ±0,82° terhadap sumbu jig, jadi TBU di model diputar dengan sudut yang sama. Dibuat dengan `tools/visualisasi_tbu.py` (STEP) dan `tools/render_visualisasi_tbu.py` (gambar).
 

@@ -83,7 +83,7 @@ def rotp(p, deg):  # putar titik dunia terhadap sumbu jig
     return (CX + x * math.cos(a) + z * math.sin(a), y, CZ - x * math.sin(a) + z * math.cos(a))
 
 f_t = ImageFont.truetype(FONTB, 38); f_s = ImageFont.truetype(FONT, 27); f_l = ImageFont.truetype(FONT, 25)
-TOP = Y_DISC1_TOP + 320
+TOP = Y_DISC1_TOP + 400
 
 def main():
     # ---- 4 langkah ----

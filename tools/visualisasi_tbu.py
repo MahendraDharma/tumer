@@ -30,6 +30,7 @@ DST = os.path.join(HERE, '..', 'Ver4 Jig + TBU terjepit.step')
 CX, CZ = 505.21, -111.927
 Y_DISC1_TOP = 318.3205            # muka atas piringan utama = alas TBU
 TBU_L, TBU_W = 510.0, 206.0       # panjang (melintang) x lebar (arah jepit ragum)
+TBU_Y0 = 80.5                     # alas rata TBU di atas piringan (titik terendah = tutup bawah perut, celah 0,5 mm)
 VISE_TILT = math.degrees(math.atan2(0.0143, 0.9999))  # sumbu kedua ragum di Ver3 miring ±0,82° terhadap Z
 AX = cq.Vector(math.sin(math.radians(VISE_TILT)), 0, math.cos(math.radians(VISE_TILT)))
 JAW_FACE = 232.0                  # jarak muka rahang (terbuka) ke sumbu jig, sepanjang sumbu ragum
@@ -88,9 +89,14 @@ def build_tbu():
     y = tinggi dari alas; z = lebar/arah jepit ragum, + = sisi depan dengan tutup bundar & nameplate).
     Bentuk mengikuti foto, ukuran diskalakan ke panjang ±500 mm dan lebar 206 mm (bukan geometri asli)."""
     hw = TBU_W / 2
-    # Badan cor: rendah di bawah silinder, naik di tengah, lalu miring turun ke ujung kanan
-    body = _prism([(-250, 0), (150, 0), (215, 45), (215, 105), (120, 165), (20, 190), (-60, 190),
-                   (-90, 130), (-250, 130)], -hw, hw)
+    # Badan cor (dari foto): sudut kiri bawah membulat, alas rata (y = 0, tempat TBU biasa diganjal balok),
+    # lalu "perut" turun ±55 mm di kanan alas dengan tutup bundar di bawahnya, naik miring ke ujung kanan.
+    arc = [(-180 + 45 * math.cos(math.radians(a)), 45 + 45 * math.sin(math.radians(a))) for a in range(180, 271, 15)]
+    body = _prism([(-225, 130)] + arc + [(210, 0), (215, 105), (120, 165), (20, 190), (-60, 190),
+                   (-90, 130)], -hw, hw)
+    belly = _prism([(15, 0.5), (35, -8), (48, -25), (56, -42), (62, -55), (130, -55), (165, -35), (195, -15),
+                    (212, 0.5)], -80, 80)
+    body = body.fuse(belly).fuse(vcyl(33, -80, -50, 95, 20))           # tutup bundar di bawah perut
     for x, y, r in ((-10, 95, 36), (75, 70, 0)):                      # dudukan tutup bundar (rata muka)
         if r: body = body.cut(cq.Solid.makeCylinder(r, 3, cq.Vector(x, y, hw - 3), cq.Vector(0, 0, 1)))
     body = body.cut(box(55, 95, 50, 90, hw - 1.5, hw + 1))             # dudukan nameplate
@@ -119,7 +125,7 @@ def build_tbu():
         aa = math.radians(a)
         cover = cover.fuse(_hex(-10 + 24 * math.cos(aa), 95 + 24 * math.sin(aa), hw - 0.5, hw, 9))
     plate = box(56, 94, 51, 89, hw - 1.5, hw)
-    rod = cq.Solid.makeCylinder(7, 60, cq.Vector(205, 45, 40), cq.Vector(1, 0, 0))   # poros penyetel manual
+    rod = cq.Solid.makeCylinder(7, 60, cq.Vector(200, -5, 40), cq.Vector(1, 0, 0))   # poros penyetel manual
     return {'TBU - badan': body.fuse(flange).clean(), 'TBU - silinder rem': cyl.fuse(pipe).clean(),
             'TBU - baut': fl_bolts.fuse(pins).clean(), 'TBU - baut kuning': gold,
             'TBU - lengan tuas': arm.clean(), 'TBU - shoe head': head.clean(), 'TBU - alur blok rem': slot,
@@ -153,7 +159,7 @@ def state(parts, clamp=1.0, lift=0.0, angle=0.0, pins_out=False, with_tbu=True):
     if with_tbu:
         for n, s in build_tbu().items():
             s = s.rotate(cq.Vector(0, 0, 0), cq.Vector(0, 1, 0), VISE_TILT)  # sejajar sumbu ragum
-            s = s.translate(cq.Vector(CX, Y_DISC1_TOP + lift, CZ))
+            s = s.translate(cq.Vector(CX, Y_DISC1_TOP + TBU_Y0 + lift, CZ))
             out[n] = _rot(s, angle) if angle else s
     return out
 
