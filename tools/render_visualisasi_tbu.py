@@ -45,8 +45,8 @@ BOUNDS = (CX - 470, CX + 470, 268, 720, CZ - 590, CZ + 590)
 ZOOM = 1.75
 CAMS = {'iso': ((CX + 1250, 1250, CZ + 1050), C, 17.5)}
 
-def render(shapes, cam='iso', size=(W, H), zoom=None):
-    ren = vtk.vtkRenderer(); ren.SetBackground(1, 1, 1)
+def render(shapes, cam='iso', size=(W, H), zoom=None, bg=(1, 1, 1)):
+    ren = vtk.vtkRenderer(); ren.SetBackground(*bg)
     for n, s in shapes.items():
         if n.startswith('Replika'): continue
         ren.AddActor(actor(n, s))
@@ -83,7 +83,7 @@ def rotp(p, deg):  # putar titik dunia terhadap sumbu jig
     return (CX + x * math.cos(a) + z * math.sin(a), y, CZ - x * math.sin(a) + z * math.cos(a))
 
 f_t = ImageFont.truetype(FONTB, 38); f_s = ImageFont.truetype(FONT, 27); f_l = ImageFont.truetype(FONT, 25)
-TOP = Y_DISC1_TOP + 400
+TOP = Y_DISC1_TOP + 360
 
 def main():
     # ---- 4 langkah ----

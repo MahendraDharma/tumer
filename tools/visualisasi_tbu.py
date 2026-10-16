@@ -30,7 +30,7 @@ DST = os.path.join(HERE, '..', 'Ver4 Jig + TBU terjepit.step')
 CX, CZ = 505.21, -111.927
 Y_DISC1_TOP = 318.3205            # muka atas piringan utama = alas TBU
 TBU_L, TBU_W = 510.0, 206.0       # panjang (melintang) x lebar (arah jepit ragum)
-TBU_Y0 = 74.5                     # alas kiri TBU di atas piringan (alas kanan = titik terendah, celah 0,5 mm)
+TBU_Y0 = 0.5                      # kedua kaki alas TBU 0,5 mm di atas piringan utama
 VISE_TILT = math.degrees(math.atan2(0.0143, 0.9999))  # sumbu kedua ragum di Ver3 miring ±0,82° terhadap Z
 AX = cq.Vector(math.sin(math.radians(VISE_TILT)), 0, math.cos(math.radians(VISE_TILT)))
 JAW_FACE = 232.0                  # jarak muka rahang (terbuka) ke sumbu jig, sepanjang sumbu ragum
@@ -85,49 +85,58 @@ def _hex(x, y, z0, z1, d):
 
 
 def build_tbu():
-    """TBU disederhanakan dari foto Nabtesco 3.5/1R (koordinat lokal: x = panjang, + ke arah shoe head;
-    y = tinggi dari alas; z = lebar/arah jepit ragum, + = sisi depan dengan tutup bundar & nameplate).
-    Bentuk mengikuti foto, ukuran diskalakan ke panjang ±500 mm dan lebar 206 mm (bukan geometri asli)."""
+    """TBU Nabtesco 3.5/1R disederhanakan dari foto samping berpenggaris (±0,65 mm/piksel) dan foto isometri.
+    Koordinat lokal: x = panjang (+ ke ujung shoe head), y = tinggi dari alas, z = lebar/arah jepit ragum
+    (+ = sisi depan dengan tutup bundar & nameplate). Bukan geometri asli."""
     hw = TBU_W / 2
-    # Badan cor (dari foto close-up): alas bertingkat. Bagian kiri (di bawah flens silinder) alasnya di y = 0
-    # dengan sudut kiri bawah sedikit membulat; lengkung S halus turun 74 mm (x = -130 ... -20); bagian kanan
-    # (di bawah tutup bundar & nameplate) alasnya rata di y = -74, lalu naik ke ujung kanan (poros penyetel).
-    arc = [(-210 + 15 * math.cos(math.radians(t)), 15 + 15 * math.sin(math.radians(t))) for t in range(180, 271, 30)]
-    ogee = [(-130 + 110 * k / 10, -74 * (1 - math.cos(math.pi * k / 10)) / 2) for k in range(11)]
-    body = _prism([(-225, 130)] + arc + ogee + [(150, -74), (185, -62), (205, -40), (212, -15), (215, 105),
-                   (120, 165), (20, 190), (-60, 190), (-90, 130)], -hw, hw)
-    for x, y, r in ((-10, 60, 36), (75, 70, 0)):                      # dudukan tutup bundar (rata muka)
-        if r: body = body.cut(cq.Solid.makeCylinder(r, 3, cq.Vector(x, y, hw - 3), cq.Vector(0, 0, 1)))
-    body = body.cut(box(55, 95, -5, 35, hw - 1.5, hw + 1))             # dudukan nameplate
-    flange = box(-255, -45, 130, 140, -hw, hw)                         # flens silinder berbaut 4
-    cyl = vcyl(90, 140, 275, -160, 0).fuse(vcyl(84, 275, 281, -160, 0))   # silinder rem + tutup atas
-    pipe = vcyl(11, 281, 305, -215, -35).fuse(cq.Solid.makeSphere(15, cq.Vector(-215, 313, -35))) \
-        .fuse(cq.Solid.makeCylinder(12, 45, cq.Vector(-215, 313, -35), cq.Vector(0, 0, -1)))
+    # Badan cor: kaki kiri dan kaki kanan rata (y = 0) dengan lengkung cekung ±35 mm di antaranya (tempat
+    # balok kayu); sisi atas turun miring dari bahu (dudukan pivot tuas di samping silinder) ke ujung kanan,
+    # yang berupa muka tegak tempat poros penyetel keluar.
+    arch = [(-100 + 200 * k / 12, 35 * math.sin(math.pi * k / 12)) for k in range(13)]
+    corner = [(-188 + 12 * math.cos(math.radians(t)), 12 + 12 * math.sin(math.radians(t))) for t in range(180, 271, 30)]
+    body = _prism([(-200, 140)] + corner + arch + [(245, 0), (245, 125), (-10, 205), (-38, 245),
+                   (-75, 245), (-75, 140)], -hw, hw)
+    # sudut depan-bawah ujung kanan dipotong miring (garis miring di foto samping); muka ujung tetap tegak
+    body = body.cut(_prism([(135, -1), (246, -1), (246, 112)], 35, hw + 1))
+    for x, y, r in ((112, 117, 33),):                                  # dudukan tutup bundar (rata muka)
+        body = body.cut(cq.Solid.makeCylinder(r, 3, cq.Vector(x, y, hw - 3), cq.Vector(0, 0, 1)))
+    body = body.cut(box(158, 190, 63, 120, hw - 1.5, hw + 1))           # dudukan nameplate (tegak)
+    flange = box(-265, -40, 133, 153, -hw, hw)                          # flens silinder (menjorok ke kiri)
+    eye = cq.Solid.makeTorus(15, 4, cq.Vector(-224, 100, 0), cq.Vector(0, 0, 1)) \
+        .fuse(cq.Solid.makeCylinder(5, 15, cq.Vector(-209, 100, 0), cq.Vector(1, 0, 0)))   # baut mata
+    cyl = vcyl(90, 153, 286, -162, 0).fuse(vcyl(85, 286, 292, -162, 0))   # silinder rem + tutup atas
+    pipe = vcyl(10, 292, 335, -222, -35).fuse(cq.Solid.makeSphere(14, cq.Vector(-222, 345, -35))) \
+        .fuse(cq.Solid.makeCylinder(12, 32, cq.Vector(-222, 345, -35), cq.Vector(-1, 0, 0)))   # pipa siku
     fl_bolts = None
-    for x in (-240, -60):
+    for x in (-250, -55):
         for z in (-88, 88):
-            b = cq.Workplane("XZ", origin=(x, 140, z)).polygon(6, 22).extrude(-10).val()
+            b = cq.Workplane("XZ", origin=(x, 153, z)).polygon(6, 22).extrude(-10).val()
             fl_bolts = b if fl_bolts is None else fl_bolts.fuse(b)
-    # Lengan tuas: dari pivot di sisi kanan atas silinder turun ke pin depan
-    arm = _prism([(-105, 225), (-75, 262), (75, 182), (40, 140)], -80, 80).cut(vcyl(90, 130, 320, -160, 0))
-    # Shoe head: bibir kiri, slot blok rem (U), punggung, lalu pelat "R" melandai ke ujung kanan
-    head = _prism([(-40, 205), (-40, 262), (5, 268), (5, 232), (60, 232), (60, 272), (95, 265),
-                   (180, 248), (252, 236), (252, 224), (160, 214), (150, 182), (60, 168), (0, 182)], -80, 80)
-    head = head.cut(box(5, 60, 232, 280, -60, 60))                    # alur blok rem (cekung)
-    slot = box(5, 60, 232, 234, -60, 60)                               # dasar alur (gelap)
-    pins = cq.Solid.makeCylinder(25, 2 * hw - 2, cq.Vector(55, 160, -hw + 1), cq.Vector(0, 0, 1)) \
-        .fuse(cq.Solid.makeCylinder(22, 2 * hw - 2, cq.Vector(145, 180, -hw + 1), cq.Vector(0, 0, 1))) \
-        .fuse(_hex(145, 180, hw - 1, hw + 11, 30))
-    gold = _hex(-90, 243, 80, 92, 30).fuse(cq.Solid.makeCylinder(8, 8, cq.Vector(-90, 243, 92), cq.Vector(0, 0, 1)))
-    cover = cq.Solid.makeCylinder(35, 2.5, cq.Vector(-10, 60, hw - 3), cq.Vector(0, 0, 1))
+    # Tuas: dari pivot (mur kuning) di bahu turun ke pin depan
+    piv, pin1, pin2 = (-25, 232), (170, 178), (222, 188)
+    arm = _prism([(-45, 250), (-5, 214), (182, 158), (160, 198)], -85, 85).cut(vcyl(90, 140, 320, -162, 0))
+    pins = cq.Solid.makeCylinder(30, 2 * hw - 4, cq.Vector(piv[0], piv[1], -hw + 2), cq.Vector(0, 0, 1)) \
+        .fuse(cq.Solid.makeCylinder(22, 2 * hw - 4, cq.Vector(pin1[0], pin1[1], -hw + 2), cq.Vector(0, 0, 1))) \
+        .fuse(cq.Solid.makeCylinder(20, 2 * hw - 4, cq.Vector(pin2[0], pin2[1], -hw + 2), cq.Vector(0, 0, 1))) \
+        .fuse(_hex(pin2[0], pin2[1], hw - 2, hw + 10, 30))
+    gold = _hex(piv[0], piv[1], hw - 2, hw + 10, 36).fuse(_hex(pin1[0], pin1[1], hw - 2, hw + 8, 30))
+    # Shoe head: memanjang di atas badan, menjorok melewati ujung kanan; alur di tengah memisah dua blok rem
+    head = _prism([(0, 270), (150, 240), (150, 228), (200, 228), (200, 242), (285, 250), (290, 236),
+                   (255, 222), (200, 205), (160, 196), (110, 210), (40, 240), (0, 255)], -80, 80)
+    blocks = _prism([(0, 270), (150, 240), (150, 250), (0, 280)], -78, 78) \
+        .fuse(_prism([(200, 242), (285, 250), (285, 260), (200, 252)], -78, 78))   # dua pelat blok rem
+    slot = box(150, 200, 228, 230, -60, 60)                               # dasar alur (gelap)
+    boot = cq.Solid.makeCylinder(32, 30, cq.Vector(120, 200, 0), cq.Vector(1, 0, 0))   # karet pelindung push rod
+    cover = cq.Solid.makeCylinder(33, 2.5, cq.Vector(112, 117, hw - 3), cq.Vector(0, 0, 1))
     for a in (90, 210, 330):
         aa = math.radians(a)
-        cover = cover.fuse(_hex(-10 + 24 * math.cos(aa), 60 + 24 * math.sin(aa), hw - 0.5, hw, 9))
-    plate = box(56, 94, -4, 34, hw - 1.5, hw)
-    rod = cq.Solid.makeCylinder(7, 60, cq.Vector(200, -40, 40), cq.Vector(1, 0, 0))  # poros penyetel manual
-    return {'TBU - badan': body.fuse(flange).clean(), 'TBU - silinder rem': cyl.fuse(pipe).clean(),
-            'TBU - baut': fl_bolts.fuse(pins).clean(), 'TBU - baut kuning': gold,
-            'TBU - lengan tuas': arm.clean(), 'TBU - shoe head': head.clean(), 'TBU - alur blok rem': slot,
+        cover = cover.fuse(_hex(112 + 22 * math.cos(aa), 117 + 22 * math.sin(aa), hw - 0.5, hw + 4, 9))
+    plate = box(159, 189, 64, 119, hw - 1.5, hw)
+    rod = cq.Solid.makeCylinder(7, 50, cq.Vector(240, 40, -20), cq.Vector(1, 0, 0))   # poros penyetel manual
+    return {'TBU - badan': body.fuse(flange).fuse(eye).clean(), 'TBU - silinder rem': cyl.fuse(pipe).clean(),
+            'TBU - baut': fl_bolts.fuse(pins).clean(), 'TBU - baut kuning': gold.clean(),
+            'TBU - lengan tuas': arm.clean(), 'TBU - shoe head': head.clean(), 'TBU - blok rem': blocks.clean(),
+            'TBU - alur blok rem': slot, 'TBU - karet pelindung': boot,
             'TBU - tutup samping': cover.clean(), 'TBU - nameplate': plate, 'TBU - poros penyetel': rod}
 
 
@@ -164,6 +173,7 @@ def state(parts, clamp=1.0, lift=0.0, angle=0.0, pins_out=False, with_tbu=True):
 
 
 COLORS = {'TBU - alur blok rem': (0.12, 0.12, 0.12), 'TBU - poros penyetel': (0.10, 0.10, 0.10),
+          'TBU - blok rem': (0.32, 0.27, 0.23), 'TBU - karet pelindung': (0.08, 0.08, 0.08),
           'TBU - baut kuning': (0.85, 0.68, 0.25), 'TBU - baut': (0.86, 0.86, 0.84),
           'TBU - nameplate': (0.55, 0.62, 0.70), 'TBU - shoe head': (0.74, 0.75, 0.74),
           'TBU - lengan tuas': (0.76, 0.77, 0.76), 'TBU - tutup samping': (0.80, 0.81, 0.80)}
