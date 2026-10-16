@@ -30,7 +30,7 @@ DST = os.path.join(HERE, '..', 'Ver4 Jig + TBU terjepit.step')
 CX, CZ = 505.21, -111.927
 Y_DISC1_TOP = 318.3205            # muka atas piringan utama = alas TBU
 TBU_L, TBU_W = 510.0, 206.0       # panjang (melintang) x lebar (arah jepit ragum)
-TBU_Y0 = 80.5                     # alas rata TBU di atas piringan (titik terendah = tutup bawah perut, celah 0,5 mm)
+TBU_Y0 = 74.5                     # alas kiri TBU di atas piringan (alas kanan = titik terendah, celah 0,5 mm)
 VISE_TILT = math.degrees(math.atan2(0.0143, 0.9999))  # sumbu kedua ragum di Ver3 miring ±0,82° terhadap Z
 AX = cq.Vector(math.sin(math.radians(VISE_TILT)), 0, math.cos(math.radians(VISE_TILT)))
 JAW_FACE = 232.0                  # jarak muka rahang (terbuka) ke sumbu jig, sepanjang sumbu ragum
@@ -89,17 +89,16 @@ def build_tbu():
     y = tinggi dari alas; z = lebar/arah jepit ragum, + = sisi depan dengan tutup bundar & nameplate).
     Bentuk mengikuti foto, ukuran diskalakan ke panjang ±500 mm dan lebar 206 mm (bukan geometri asli)."""
     hw = TBU_W / 2
-    # Badan cor (dari foto): sudut kiri bawah membulat, alas rata (y = 0, tempat TBU biasa diganjal balok),
-    # lalu "perut" turun ±55 mm di kanan alas dengan tutup bundar di bawahnya, naik miring ke ujung kanan.
-    arc = [(-180 + 45 * math.cos(math.radians(a)), 45 + 45 * math.sin(math.radians(a))) for a in range(180, 271, 15)]
-    body = _prism([(-225, 130)] + arc + [(210, 0), (215, 105), (120, 165), (20, 190), (-60, 190),
-                   (-90, 130)], -hw, hw)
-    belly = _prism([(15, 0.5), (35, -8), (48, -25), (56, -42), (62, -55), (130, -55), (165, -35), (195, -15),
-                    (212, 0.5)], -80, 80)
-    body = body.fuse(belly).fuse(vcyl(33, -80, -50, 95, 20))           # tutup bundar di bawah perut
-    for x, y, r in ((-10, 95, 36), (75, 70, 0)):                      # dudukan tutup bundar (rata muka)
+    # Badan cor (dari foto close-up): alas bertingkat. Bagian kiri (di bawah flens silinder) alasnya di y = 0
+    # dengan sudut kiri bawah sedikit membulat; lengkung S halus turun 74 mm (x = -130 ... -20); bagian kanan
+    # (di bawah tutup bundar & nameplate) alasnya rata di y = -74, lalu naik ke ujung kanan (poros penyetel).
+    arc = [(-210 + 15 * math.cos(math.radians(t)), 15 + 15 * math.sin(math.radians(t))) for t in range(180, 271, 30)]
+    ogee = [(-130 + 110 * k / 10, -74 * (1 - math.cos(math.pi * k / 10)) / 2) for k in range(11)]
+    body = _prism([(-225, 130)] + arc + ogee + [(150, -74), (185, -62), (205, -40), (212, -15), (215, 105),
+                   (120, 165), (20, 190), (-60, 190), (-90, 130)], -hw, hw)
+    for x, y, r in ((-10, 60, 36), (75, 70, 0)):                      # dudukan tutup bundar (rata muka)
         if r: body = body.cut(cq.Solid.makeCylinder(r, 3, cq.Vector(x, y, hw - 3), cq.Vector(0, 0, 1)))
-    body = body.cut(box(55, 95, 50, 90, hw - 1.5, hw + 1))             # dudukan nameplate
+    body = body.cut(box(55, 95, -5, 35, hw - 1.5, hw + 1))             # dudukan nameplate
     flange = box(-255, -45, 130, 140, -hw, hw)                         # flens silinder berbaut 4
     cyl = vcyl(90, 140, 275, -160, 0).fuse(vcyl(84, 275, 281, -160, 0))   # silinder rem + tutup atas
     pipe = vcyl(11, 281, 305, -215, -35).fuse(cq.Solid.makeSphere(15, cq.Vector(-215, 313, -35))) \
@@ -120,12 +119,12 @@ def build_tbu():
         .fuse(cq.Solid.makeCylinder(22, 2 * hw - 2, cq.Vector(145, 180, -hw + 1), cq.Vector(0, 0, 1))) \
         .fuse(_hex(145, 180, hw - 1, hw + 11, 30))
     gold = _hex(-90, 243, 80, 92, 30).fuse(cq.Solid.makeCylinder(8, 8, cq.Vector(-90, 243, 92), cq.Vector(0, 0, 1)))
-    cover = cq.Solid.makeCylinder(35, 2.5, cq.Vector(-10, 95, hw - 3), cq.Vector(0, 0, 1))
+    cover = cq.Solid.makeCylinder(35, 2.5, cq.Vector(-10, 60, hw - 3), cq.Vector(0, 0, 1))
     for a in (90, 210, 330):
         aa = math.radians(a)
-        cover = cover.fuse(_hex(-10 + 24 * math.cos(aa), 95 + 24 * math.sin(aa), hw - 0.5, hw, 9))
-    plate = box(56, 94, 51, 89, hw - 1.5, hw)
-    rod = cq.Solid.makeCylinder(7, 60, cq.Vector(200, -5, 40), cq.Vector(1, 0, 0))   # poros penyetel manual
+        cover = cover.fuse(_hex(-10 + 24 * math.cos(aa), 60 + 24 * math.sin(aa), hw - 0.5, hw, 9))
+    plate = box(56, 94, -4, 34, hw - 1.5, hw)
+    rod = cq.Solid.makeCylinder(7, 60, cq.Vector(200, -40, 40), cq.Vector(1, 0, 0))  # poros penyetel manual
     return {'TBU - badan': body.fuse(flange).clean(), 'TBU - silinder rem': cyl.fuse(pipe).clean(),
             'TBU - baut': fl_bolts.fuse(pins).clean(), 'TBU - baut kuning': gold,
             'TBU - lengan tuas': arm.clean(), 'TBU - shoe head': head.clean(), 'TBU - alur blok rem': slot,
