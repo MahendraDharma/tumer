@@ -26,6 +26,7 @@ from OCP.Interface import Interface_Static
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, '..', 'Ver4 Jig Assembly ragum putar.step')
 DST = os.path.join(HERE, '..', 'Ver4 Jig + TBU terjepit.step')
+DST_TBU = os.path.join(HERE, '..', 'TBU Nabtesco 3.5-1R (model).step')
 
 CX, CZ = 505.21, -111.927
 Y_DISC1_TOP = 318.3205            # muka atas piringan utama = alas TBU
@@ -192,10 +193,10 @@ def color_of(n):
     return (0.68, 0.68, 0.66)
 
 
-def write_step(shapes, path):
+def write_step(shapes, path, root_name='JigTBU_rev2 + TBU'):
     doc = TDocStd_Document(TCollection_ExtendedString('XmlOcaf'))
     st = XCAFDoc_DocumentTool.ShapeTool_s(doc.Main()); ct = XCAFDoc_DocumentTool.ColorTool_s(doc.Main())
-    root = st.NewShape(); TDataStd_Name.Set_s(root, TCollection_ExtendedString('JigTBU_rev2 + TBU'))
+    root = st.NewShape(); TDataStd_Name.Set_s(root, TCollection_ExtendedString(root_name))
     for n, s in shapes.items():
         lab = st.AddShape(s.wrapped, False); TDataStd_Name.Set_s(lab, TCollection_ExtendedString(n.rstrip("'")))
         ct.SetColor(lab, Quantity_Color(*color_of(n), Quantity_TOC_RGB), XCAFDoc_ColorSurf)
@@ -212,3 +213,5 @@ if __name__ == '__main__':
     shapes = state(parts, clamp=1.0)
     write_step(shapes, DST)
     print('langkah rahang = %.1f mm per sisi ->' % CLAMP_TRAVEL, os.path.abspath(DST))
+    write_step(build_tbu(), DST_TBU, root_name='TBU Nabtesco 3.5-1R (model)')   # TBU saja, alas di y = 0
+    print('TBU saja ->', os.path.abspath(DST_TBU))
